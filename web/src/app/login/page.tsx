@@ -1,5 +1,6 @@
 import { connectToDatabase } from "@/lib/db";
 import TeamModel from "@/models/Team";
+import { PhoneFrame } from "@/components/PhoneFrame";
 import { pickUser } from "./actions";
 
 type LeanTeam = { _id: string; name: string; shortName: string; logoUrl: string };
@@ -9,12 +10,7 @@ export default async function LoginPage() {
   const teams = (await TeamModel.find({}).sort({ name: 1 }).lean()) as unknown as LeanTeam[];
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0B0C16] text-white"
-      style={{
-        backgroundImage:
-          "radial-gradient(520px circle at 8% -6%, rgba(124,92,255,0.28), transparent 55%), radial-gradient(460px circle at 104% 10%, rgba(255,79,195,0.20), transparent 50%)",
-      }}
-    >
+    <PhoneFrame>
       <div
         className="px-7 pt-10 pb-14"
         style={{
@@ -97,6 +93,6 @@ export default async function LoginPage() {
           Sin contraseña. Es gratis, siempre.
         </p>
       </form>
-    </main>
+    </PhoneFrame>
   );
 }

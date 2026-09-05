@@ -6,6 +6,7 @@ import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import UserModel from "@/models/User";
 import { isPast } from "@/lib/time";
+import { PhoneFrame } from "@/components/PhoneFrame";
 import { submitDirection, submitExactScore, runSyncNow, finishMockMatch, resetMockMatch } from "./actions";
 
 const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
@@ -105,12 +106,8 @@ export default async function DuelosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0C16] pb-28 text-white"
-      style={{
-        backgroundImage:
-          "radial-gradient(520px circle at 8% -6%, rgba(124,92,255,0.28), transparent 55%), radial-gradient(460px circle at 104% 10%, rgba(255,79,195,0.20), transparent 50%)",
-      }}
-    >
+    <PhoneFrame>
+      <div className="pb-28">
       {/* hero */}
       <div
         className="px-6 pt-5 pb-8"
@@ -363,7 +360,7 @@ export default async function DuelosPage() {
       </div>
 
       {/* bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:inset-x-auto flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
         <div className="flex flex-col items-center gap-1">
           <div className="flex h-8 w-10 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#6845E0] to-[#9B5CFF] shadow-[0_4px_14px_rgba(124,92,255,0.45)]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -390,6 +387,7 @@ export default async function DuelosPage() {
           <span className="text-[9px] font-extrabold text-[#6B6F94]">PERFIL</span>
         </div>
       </div>
-    </main>
+      </div>
+    </PhoneFrame>
   );
 }

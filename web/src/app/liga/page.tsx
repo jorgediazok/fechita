@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
+import { PhoneFrame } from "@/components/PhoneFrame";
 
 // Vista previa visual únicamente. El sistema real de ligas semanales (categorías
 // Primera D -> Primera División, ascenso/descenso, grupos de ~20-25 mezclados por club)
@@ -30,13 +31,8 @@ export default async function LigaPage() {
   if (!user) redirect("/login");
 
   return (
-    <main
-      className="min-h-screen bg-[#0B0C16] pb-28 text-white"
-      style={{
-        backgroundImage:
-          "radial-gradient(520px circle at 8% -6%, rgba(124,92,255,0.28), transparent 55%), radial-gradient(460px circle at 104% 10%, rgba(255,79,195,0.20), transparent 50%)",
-      }}
-    >
+    <PhoneFrame>
+      <div className="pb-28">
       <div
         className="px-6 pt-5 pb-8"
         style={{
@@ -127,7 +123,7 @@ export default async function LigaPage() {
         ))}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:inset-x-auto flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
         <Link href="/duelos" className="flex flex-col items-center gap-1">
           <div className="flex h-8 w-10 items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -157,6 +153,7 @@ export default async function LigaPage() {
           <span className="text-[9px] font-extrabold text-[#6B6F94]">PERFIL</span>
         </div>
       </div>
-    </main>
+      </div>
+    </PhoneFrame>
   );
 }
