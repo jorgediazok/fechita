@@ -1,0 +1,632 @@
+[
+  {
+    "externalId": 1158660,
+    "date": "2024-05-11T22:45:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 435,
+      "name": "River Plate",
+      "logo": "https://media.api-sports.io/football/teams/435.png"
+    },
+    "awayTeam": {
+      "id": 1065,
+      "name": "Central Cordoba de Santiago",
+      "logo": "https://media.api-sports.io/football/teams/1065.png"
+    }
+  },
+  {
+    "externalId": 1158661,
+    "date": "2024-05-12T20:45:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 440,
+      "name": "Belgrano Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/440.png"
+    },
+    "awayTeam": {
+      "id": 436,
+      "name": "Racing Club",
+      "logo": "https://media.api-sports.io/football/teams/436.png"
+    }
+  },
+  {
+    "externalId": 1158662,
+    "date": "2024-05-11T00:15:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 458,
+      "name": "Argentinos JRS",
+      "logo": "https://media.api-sports.io/football/teams/458.png"
+    },
+    "awayTeam": {
+      "id": 437,
+      "name": "Rosario Central",
+      "logo": "https://media.api-sports.io/football/teams/437.png"
+    }
+  },
+  {
+    "externalId": 1158663,
+    "date": "2024-05-12T18:30:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 452,
+      "name": "Tigre",
+      "logo": "https://media.api-sports.io/football/teams/452.png"
+    },
+    "awayTeam": {
+      "id": 450,
+      "name": "Estudiantes L.P.",
+      "logo": "https://media.api-sports.io/football/teams/450.png"
+    }
+  },
+  {
+    "externalId": 1158664,
+    "date": "2024-05-12T18:30:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 476,
+      "name": "Deportivo Riestra",
+      "logo": "https://media.api-sports.io/football/teams/476.png"
+    },
+    "awayTeam": {
+      "id": 460,
+      "name": "San Lorenzo",
+      "logo": "https://media.api-sports.io/football/teams/460.png"
+    }
+  },
+  {
+    "externalId": 1158665,
+    "date": "2024-05-12T20:45:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 446,
+      "name": "Lanus",
+      "logo": "https://media.api-sports.io/football/teams/446.png"
+    },
+    "awayTeam": {
+      "id": 473,
+      "name": "Independ. Rivadavia",
+      "logo": "https://media.api-sports.io/football/teams/473.png"
+    }
+  },
+  {
+    "externalId": 1158666,
+    "date": "2024-05-11T18:30:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 439,
+      "name": "Godoy Cruz",
+      "logo": "https://media.api-sports.io/football/teams/439.png"
+    },
+    "awayTeam": {
+      "id": 2432,
+      "name": "Barracas Central",
+      "logo": "https://media.api-sports.io/football/teams/2432.png"
+    }
+  },
+  {
+    "externalId": 1158667,
+    "date": "2024-05-10T22:00:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 474,
+      "name": "Sarmiento Junin",
+      "logo": "https://media.api-sports.io/football/teams/474.png"
+    },
+    "awayTeam": {
+      "id": 478,
+      "name": "Instituto Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/478.png"
+    }
+  },
+  {
+    "externalId": 1158668,
+    "date": "2024-05-14T00:00:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 441,
+      "name": "Union Santa Fe",
+      "logo": "https://media.api-sports.io/football/teams/441.png"
+    },
+    "awayTeam": {
+      "id": 449,
+      "name": "Banfield",
+      "logo": "https://media.api-sports.io/football/teams/449.png"
+    }
+  },
+  {
+    "externalId": 1158669,
+    "date": "2024-05-11T17:30:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 445,
+      "name": "Huracan",
+      "logo": "https://media.api-sports.io/football/teams/445.png"
+    },
+    "awayTeam": {
+      "id": 442,
+      "name": "Defensa Y Justicia",
+      "logo": "https://media.api-sports.io/football/teams/442.png"
+    }
+  },
+  {
+    "externalId": 1158670,
+    "date": "2024-05-13T22:00:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 434,
+      "name": "Gimnasia L.P.",
+      "logo": "https://media.api-sports.io/football/teams/434.png"
+    },
+    "awayTeam": {
+      "id": 438,
+      "name": "Velez Sarsfield",
+      "logo": "https://media.api-sports.io/football/teams/438.png"
+    }
+  },
+  {
+    "externalId": 1158671,
+    "date": "2024-05-11T00:15:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 457,
+      "name": "Newells Old Boys",
+      "logo": "https://media.api-sports.io/football/teams/457.png"
+    },
+    "awayTeam": {
+      "id": 1064,
+      "name": "Platense",
+      "logo": "https://media.api-sports.io/football/teams/1064.png"
+    }
+  },
+  {
+    "externalId": 1158672,
+    "date": "2024-05-11T20:30:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 453,
+      "name": "Independiente",
+      "logo": "https://media.api-sports.io/football/teams/453.png"
+    },
+    "awayTeam": {
+      "id": 456,
+      "name": "Talleres Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/456.png"
+    }
+  },
+  {
+    "externalId": 1158673,
+    "date": "2024-05-12T23:15:00+00:00",
+    "round": "Fecha 1",
+    "homeTeam": {
+      "id": 455,
+      "name": "Atletico Tucuman",
+      "logo": "https://media.api-sports.io/football/teams/455.png"
+    },
+    "awayTeam": {
+      "id": 451,
+      "name": "Boca Juniors",
+      "logo": "https://media.api-sports.io/football/teams/451.png"
+    }
+  },
+  {
+    "externalId": 1158674,
+    "date": "2024-05-19T23:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 1065,
+      "name": "Central Cordoba de Santiago",
+      "logo": "https://media.api-sports.io/football/teams/1065.png"
+    },
+    "awayTeam": {
+      "id": 451,
+      "name": "Boca Juniors",
+      "logo": "https://media.api-sports.io/football/teams/451.png"
+    }
+  },
+  {
+    "externalId": 1158675,
+    "date": "2024-05-19T20:45:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 456,
+      "name": "Talleres Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/456.png"
+    },
+    "awayTeam": {
+      "id": 455,
+      "name": "Atletico Tucuman",
+      "logo": "https://media.api-sports.io/football/teams/455.png"
+    }
+  },
+  {
+    "externalId": 1158676,
+    "date": "2024-05-19T18:30:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 1064,
+      "name": "Platense",
+      "logo": "https://media.api-sports.io/football/teams/1064.png"
+    },
+    "awayTeam": {
+      "id": 453,
+      "name": "Independiente",
+      "logo": "https://media.api-sports.io/football/teams/453.png"
+    }
+  },
+  {
+    "externalId": 1158677,
+    "date": "2024-05-21T23:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 438,
+      "name": "Velez Sarsfield",
+      "logo": "https://media.api-sports.io/football/teams/438.png"
+    },
+    "awayTeam": {
+      "id": 457,
+      "name": "Newells Old Boys",
+      "logo": "https://media.api-sports.io/football/teams/457.png"
+    }
+  },
+  {
+    "externalId": 1158678,
+    "date": "2024-05-18T23:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 442,
+      "name": "Defensa Y Justicia",
+      "logo": "https://media.api-sports.io/football/teams/442.png"
+    },
+    "awayTeam": {
+      "id": 434,
+      "name": "Gimnasia L.P.",
+      "logo": "https://media.api-sports.io/football/teams/434.png"
+    }
+  },
+  {
+    "externalId": 1158679,
+    "date": "2024-05-19T20:45:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 449,
+      "name": "Banfield",
+      "logo": "https://media.api-sports.io/football/teams/449.png"
+    },
+    "awayTeam": {
+      "id": 445,
+      "name": "Huracan",
+      "logo": "https://media.api-sports.io/football/teams/445.png"
+    }
+  },
+  {
+    "externalId": 1158680,
+    "date": "2024-05-18T23:30:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 478,
+      "name": "Instituto Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/478.png"
+    },
+    "awayTeam": {
+      "id": 441,
+      "name": "Union Santa Fe",
+      "logo": "https://media.api-sports.io/football/teams/441.png"
+    }
+  },
+  {
+    "externalId": 1158681,
+    "date": "2024-05-19T18:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 2432,
+      "name": "Barracas Central",
+      "logo": "https://media.api-sports.io/football/teams/2432.png"
+    },
+    "awayTeam": {
+      "id": 474,
+      "name": "Sarmiento Junin",
+      "logo": "https://media.api-sports.io/football/teams/474.png"
+    }
+  },
+  {
+    "externalId": 1158682,
+    "date": "2024-05-18T18:30:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 473,
+      "name": "Independ. Rivadavia",
+      "logo": "https://media.api-sports.io/football/teams/473.png"
+    },
+    "awayTeam": {
+      "id": 439,
+      "name": "Godoy Cruz",
+      "logo": "https://media.api-sports.io/football/teams/439.png"
+    }
+  },
+  {
+    "externalId": 1158683,
+    "date": "2024-05-20T22:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 460,
+      "name": "San Lorenzo",
+      "logo": "https://media.api-sports.io/football/teams/460.png"
+    },
+    "awayTeam": {
+      "id": 446,
+      "name": "Lanus",
+      "logo": "https://media.api-sports.io/football/teams/446.png"
+    }
+  },
+  {
+    "externalId": 1158684,
+    "date": "2024-05-20T22:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 450,
+      "name": "Estudiantes L.P.",
+      "logo": "https://media.api-sports.io/football/teams/450.png"
+    },
+    "awayTeam": {
+      "id": 476,
+      "name": "Deportivo Riestra",
+      "logo": "https://media.api-sports.io/football/teams/476.png"
+    }
+  },
+  {
+    "externalId": 1158685,
+    "date": "2024-05-21T00:15:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 437,
+      "name": "Rosario Central",
+      "logo": "https://media.api-sports.io/football/teams/437.png"
+    },
+    "awayTeam": {
+      "id": 452,
+      "name": "Tigre",
+      "logo": "https://media.api-sports.io/football/teams/452.png"
+    }
+  },
+  {
+    "externalId": 1158686,
+    "date": "2024-05-21T00:15:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 436,
+      "name": "Racing Club",
+      "logo": "https://media.api-sports.io/football/teams/436.png"
+    },
+    "awayTeam": {
+      "id": 458,
+      "name": "Argentinos JRS",
+      "logo": "https://media.api-sports.io/football/teams/458.png"
+    }
+  },
+  {
+    "externalId": 1158687,
+    "date": "2024-05-18T21:00:00+00:00",
+    "round": "Fecha 2",
+    "homeTeam": {
+      "id": 435,
+      "name": "River Plate",
+      "logo": "https://media.api-sports.io/football/teams/435.png"
+    },
+    "awayTeam": {
+      "id": 440,
+      "name": "Belgrano Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/440.png"
+    }
+  },
+  {
+    "externalId": 1158688,
+    "date": "2024-05-25T00:15:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 440,
+      "name": "Belgrano Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/440.png"
+    },
+    "awayTeam": {
+      "id": 1065,
+      "name": "Central Cordoba de Santiago",
+      "logo": "https://media.api-sports.io/football/teams/1065.png"
+    }
+  },
+  {
+    "externalId": 1158689,
+    "date": "2024-05-25T18:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 458,
+      "name": "Argentinos JRS",
+      "logo": "https://media.api-sports.io/football/teams/458.png"
+    },
+    "awayTeam": {
+      "id": 435,
+      "name": "River Plate",
+      "logo": "https://media.api-sports.io/football/teams/435.png"
+    }
+  },
+  {
+    "externalId": 1158690,
+    "date": "2024-05-24T22:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 452,
+      "name": "Tigre",
+      "logo": "https://media.api-sports.io/football/teams/452.png"
+    },
+    "awayTeam": {
+      "id": 436,
+      "name": "Racing Club",
+      "logo": "https://media.api-sports.io/football/teams/436.png"
+    }
+  },
+  {
+    "externalId": 1158691,
+    "date": "2024-05-24T18:30:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 476,
+      "name": "Deportivo Riestra",
+      "logo": "https://media.api-sports.io/football/teams/476.png"
+    },
+    "awayTeam": {
+      "id": 437,
+      "name": "Rosario Central",
+      "logo": "https://media.api-sports.io/football/teams/437.png"
+    }
+  },
+  {
+    "externalId": 1158692,
+    "date": "2024-05-25T00:15:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 446,
+      "name": "Lanus",
+      "logo": "https://media.api-sports.io/football/teams/446.png"
+    },
+    "awayTeam": {
+      "id": 450,
+      "name": "Estudiantes L.P.",
+      "logo": "https://media.api-sports.io/football/teams/450.png"
+    }
+  },
+  {
+    "externalId": 1158693,
+    "date": "2024-10-12T18:30:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 439,
+      "name": "Godoy Cruz",
+      "logo": "https://media.api-sports.io/football/teams/439.png"
+    },
+    "awayTeam": {
+      "id": 460,
+      "name": "San Lorenzo",
+      "logo": "https://media.api-sports.io/football/teams/460.png"
+    }
+  },
+  {
+    "externalId": 1158694,
+    "date": "2024-05-26T20:30:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 474,
+      "name": "Sarmiento Junin",
+      "logo": "https://media.api-sports.io/football/teams/474.png"
+    },
+    "awayTeam": {
+      "id": 473,
+      "name": "Independ. Rivadavia",
+      "logo": "https://media.api-sports.io/football/teams/473.png"
+    }
+  },
+  {
+    "externalId": 1158695,
+    "date": "2024-05-27T22:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 441,
+      "name": "Union Santa Fe",
+      "logo": "https://media.api-sports.io/football/teams/441.png"
+    },
+    "awayTeam": {
+      "id": 2432,
+      "name": "Barracas Central",
+      "logo": "https://media.api-sports.io/football/teams/2432.png"
+    }
+  },
+  {
+    "externalId": 1158696,
+    "date": "2024-05-26T18:30:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 445,
+      "name": "Huracan",
+      "logo": "https://media.api-sports.io/football/teams/445.png"
+    },
+    "awayTeam": {
+      "id": 478,
+      "name": "Instituto Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/478.png"
+    }
+  },
+  {
+    "externalId": 1158697,
+    "date": "2024-05-26T20:45:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 434,
+      "name": "Gimnasia L.P.",
+      "logo": "https://media.api-sports.io/football/teams/434.png"
+    },
+    "awayTeam": {
+      "id": 449,
+      "name": "Banfield",
+      "logo": "https://media.api-sports.io/football/teams/449.png"
+    }
+  },
+  {
+    "externalId": 1158698,
+    "date": "2024-05-25T20:30:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 457,
+      "name": "Newells Old Boys",
+      "logo": "https://media.api-sports.io/football/teams/457.png"
+    },
+    "awayTeam": {
+      "id": 442,
+      "name": "Defensa Y Justicia",
+      "logo": "https://media.api-sports.io/football/teams/442.png"
+    }
+  },
+  {
+    "externalId": 1158699,
+    "date": "2024-05-26T23:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 453,
+      "name": "Independiente",
+      "logo": "https://media.api-sports.io/football/teams/453.png"
+    },
+    "awayTeam": {
+      "id": 438,
+      "name": "Velez Sarsfield",
+      "logo": "https://media.api-sports.io/football/teams/438.png"
+    }
+  },
+  {
+    "externalId": 1158700,
+    "date": "2024-05-28T00:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 455,
+      "name": "Atletico Tucuman",
+      "logo": "https://media.api-sports.io/football/teams/455.png"
+    },
+    "awayTeam": {
+      "id": 1064,
+      "name": "Platense",
+      "logo": "https://media.api-sports.io/football/teams/1064.png"
+    }
+  },
+  {
+    "externalId": 1158701,
+    "date": "2024-05-25T23:00:00+00:00",
+    "round": "Fecha 3",
+    "homeTeam": {
+      "id": 451,
+      "name": "Boca Juniors",
+      "logo": "https://media.api-sports.io/football/teams/451.png"
+    },
+    "awayTeam": {
+      "id": 456,
+      "name": "Talleres Cordoba",
+      "logo": "https://media.api-sports.io/football/teams/456.png"
+    }
+  }
+]

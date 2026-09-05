@@ -38,10 +38,10 @@ Todavía sin resolver. Se evaluaron y descartaron: "Cómo Van", "Cómo Salieron"
 ## Mecánicas de juego
 
 ### Sistema de puntos por pronóstico
-- 4 puntos: resultado exacto
+- 5 puntos: resultado exacto
 - 3 puntos: acierta solo la dirección (gana/empata/pierde)
 - 0 puntos: no acierta nada
-- Pendiente de revisar: la diferencia entre 4 y 3 es chica dado lo mucho más difícil que es acertar el resultado exacto — considerar separar más (ej. 5/2/0) si en la práctica no incentiva arriesgar el resultado exacto.
+- Decidido 2026-09-04: se separó de 4/3/0 a 5/3/0 para incentivar arriesgar el resultado exacto en vez de conformarse con acertar solo la dirección.
 
 ### Partidos suspendidos/anulados
 - Si se reprograma y juega después (lo normal en Argentina): la predicción espera, sin regla especial.
@@ -73,13 +73,23 @@ Sin dinero ni apuestas — descartado por riesgo legal/regulatorio de juego en A
 - Para los días sin partido: el gancho es revisar la posición en la liga semanal (puede moverse por otros cargando pronósticos), reforzado con notificaciones push inteligentes ("te superaron", "cierra la carga en 2 horas", "estás cerca de ascender").
 - **Trivia diaria de cultura futbolera** (no ligada a un partido específico): aporta un tope de **5 puntos extra por semana** a la liga semanal (no ilimitado, para no diluir que el ascenso refleje saber predecir fútbol real de verdad). El resto de puntos de trivia van a un track separado de XP/insignias, sin afectar el ascenso.
 
+## Dirección de diseño visual (mockups, 2026-09-05)
+
+Se hicieron mockups mobile-first en un canvas de diseño (iterado varias veces con el usuario) antes de tocar el código de UI real. Decisiones que quedaron validadas:
+
+- **Identidad visual**: fondo oscuro casi negro, degradé de marca violeta → magenta (con resplandor/glow, no sombras planas ni colores 100% sólidos — eso se probó y se sintió "retro/arcade"), tipografía Anton (display) + Manrope (texto). Paleta descartada en el camino: celeste pastel + dorado (muy genérico/gamificado tipo Duolingo), y una dirección "prode de oficina" (papel fotocopiado/máquina de escribir) que tampoco convenció.
+- **La pantalla principal NO es una lista de partidos** (ese es el patrón genérico de Prode Master/Mercado Pago que se quiso evitar a propósito). En cambio arranca mostrando **tu posición real dentro del grupo de ~20 de tu liga semanal** (ej. "3° de 20", con una barra de zona de ascenso/descenso), no un enfrentamiento 1 contra 1 inventado — el juego es contra el grupo entero, estilo Duolingo, no un duelo con una persona puntual.
+- **Cargar pronósticos vive en esa misma pantalla principal** (sección "Pendientes"), no en una pantalla separada. La carga usa **fichas 1-X-2** (la notación real de boletas de quiniela argentinas) en vez de dos casilleros de goles — tocás la dirección del resultado, y quien quiera ir por el resultado exacto (el bonus de 5 pts) despliega un mini marcador aparte.
+- **Pendiente para cuando haya más de una competencia activa** (Copa Argentina, Libertadores, etc.): la sección "Pendientes" se filtra con chips de competencia arriba (Liga / Copa Argentina / Libertadores) en vez de separarse en una pantalla/pestaña aparte — decidido así para no sumar navegación extra.
+
 ## Stack técnico (decidido, no iniciado)
 
 - **Frontend/backend**: Next.js + TypeScript
 - **DB**: MongoDB
-- **Datos de partidos**: API-Football (api-football.com vía RapidAPI), free tier (100 req/día) sincronizado por cron a la DB propia — nunca exponer la API externa directo a usuarios finales, así el costo escala con cantidad de partidos sincronizados, no con cantidad de usuarios.
+- **Datos de partidos**: API-Football (api-football.com, registro directo en su propio dashboard — no hace falta pasar por RapidAPI), sincronizado por cron a la DB propia — nunca exponer la API externa directo a usuarios finales, así el costo escala con cantidad de partidos sincronizados, no con cantidad de usuarios. **Ojo**: el free tier (100 req/día) **no da acceso a la temporada actual**, solo a temporadas 2022-2024 (confirmado contra la API real, 2026-09-06) — para partidos reales y en curso hace falta el plan Pro (~USD 19/mes, 7.500 req/día). Se investigaron alternativas gratis con cobertura de fútbol argentino actual (football-data.org, TheSportsDB) y ninguna sirve: la primera no cubre Argentina/Sudamérica en su free tier, la segunda limita a 15 requests de por vida el endpoint que se necesita. Mientras tanto, desarrollo sigue con datos simulados (ver `CLAUDE.md`) hasta que se decida pagar el plan Pro.
 - **Resultados en vivo** (si se implementa más adelante): caché compartida con TTL de 60-90s, solo pollear partidos con espectadores activos — mismo principio de desacople. Requiere plan pago de API-Football (~$10-19/mes) para volumen real de partidos simultáneos.
-- **Mobile**: arrancar como PWA (instalable, casi gratis de agregar sobre Next.js). Evaluar Capacitor más adelante si se quiere presencia en App Store/Play Store sin rehacer la UI.
+- **Mobile**: arrancar como PWA (instalable, casi gratis de agregar sobre Next.js). El código de Next.js no cambia según esta decisión, así que no bloquea empezar a construir.
+- **Pendiente de decidir** (2026-09-04): cómo llegar a las stores para maximizar descargas masivas — objetivo explícito del producto es "que lo descargue todo el mundo", con preferencia mobile. Opción evaluada con mejor fit dado el perfil del creador (senior frontend, fuerte en Next.js, sin experiencia previa en apps nativas): **Capacitor** — empaqueta la misma app web en un proyecto nativo real para publicar en Play Store ($25 pago único) y App Store ($99/año), reusando ~todo el código Next.js sin reescribir en React Native. Alternativa descartada por ahora: React Native/Expo (más popular y más performante nativamente, pero exige reescribir la UI). Revisar esta decisión una vez que el loop central esté funcionando como PWA — no antes.
 
 ## Modelo de datos — capas 1 y 2 (definidas en detalle)
 
@@ -160,7 +170,7 @@ Perfil, no credenciales — auth manejado aparte (ej. NextAuth).
 ```ts
 function calculatePoints(pred: Prediction, match: Match): number {
   if (pred.predictedHomeScore === match.homeScore && pred.predictedAwayScore === match.awayScore) {
-    return 4; // exacto
+    return 5; // exacto
   }
   const predicted = Math.sign(pred.predictedHomeScore - pred.predictedAwayScore);
   const actual = Math.sign(match.homeScore! - match.awayScore!);
