@@ -1,14 +1,8 @@
-import { connectToDatabase } from "@/lib/db";
-import TeamModel from "@/models/Team";
+import Link from "next/link";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { pickUser } from "./actions";
+import { loginWithGoogle, loginWithCredentials } from "./actions";
 
-type LeanTeam = { _id: string; name: string; shortName: string; logoUrl: string };
-
-export default async function LoginPage() {
-  await connectToDatabase();
-  const teams = (await TeamModel.find({}).sort({ name: 1 }).lean()) as unknown as LeanTeam[];
-
+export default function LoginPage() {
   return (
     <PhoneFrame>
       <div
@@ -36,63 +30,59 @@ export default async function LoginPage() {
         </div>
       </div>
 
-      <form action={pickUser} className="flex flex-col gap-6 px-7 py-7">
-        <div className="flex flex-col gap-2">
-          <label className="font-display text-sm tracking-wide">
-            ¿CÓMO TE LLAMAMOS?
-          </label>
+      <div className="flex flex-col gap-6 px-7 py-7">
+        <form action={loginWithGoogle}>
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-[#2A2C48] bg-[#15162A] py-3.5 text-sm font-extrabold text-white"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82z" />
+              <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.01c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11A12 12 0 0 0 12 24z" />
+              <path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.61H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.39l4-3.11z" />
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.27 6.61l4 3.11C6.22 6.86 8.87 4.75 12 4.75z" />
+            </svg>
+            Continuar con Google
+          </button>
+        </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#2A2C48]" />
+          <span className="text-[11px] font-extrabold text-[#6B6F94]">O CON TU CUENTA</span>
+          <div className="h-px flex-1 bg-[#2A2C48]" />
+        </div>
+
+        <form action={loginWithCredentials} className="flex flex-col gap-3">
           <input
-            name="name"
-            placeholder="Tu nombre"
+            name="email"
+            type="email"
+            placeholder="Email"
             required
             className="w-full rounded-2xl border-2 border-[#2A2C48] bg-[#15162A] px-4 py-3.5 text-base font-extrabold text-white outline-none placeholder:text-[#6B6F94]"
           />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <span className="font-display text-sm tracking-wide">
-            ELEGÍ TU CLUB
-          </span>
-          <div className="grid grid-cols-4 gap-x-2 gap-y-4">
-            {teams.map((team, i) => (
-              <label key={String(team._id)} className="flex cursor-pointer flex-col items-center gap-1.5">
-                <input
-                  type="radio"
-                  name="clubId"
-                  value={String(team._id)}
-                  defaultChecked={i === 0}
-                  className="peer sr-only"
-                />
-                <span className="flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full bg-[#15162A] shadow-[0_0_0_2px_#2A2C48] peer-checked:shadow-[0_0_0_3px_#7C5CFF] peer-checked:[filter:drop-shadow(0_0_10px_rgba(124,92,255,0.65))] peer-checked:-rotate-6 transition-transform">
-                  {team.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={team.logoUrl} alt="" className="h-9 w-9 object-contain" />
-                  ) : (
-                    <span className="text-xs font-extrabold text-[#6B6F94]">
-                      {team.shortName.slice(0, 3).toUpperCase()}
-                    </span>
-                  )}
-                </span>
-                <span className="text-center text-[10px] font-extrabold text-[#9195C2] peer-checked:text-[#7C5CFF]">
-                  {team.shortName}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="mt-1 rounded-2xl py-4 font-display text-lg tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
-          style={{ background: "linear-gradient(135deg, #6845E0, #9B5CFF 55%, #FF4FC3)" }}
-        >
-          ARRANCAR
-        </button>
+          <input
+            name="password"
+            type="password"
+            placeholder="Contraseña"
+            required
+            className="w-full rounded-2xl border-2 border-[#2A2C48] bg-[#15162A] px-4 py-3.5 text-base font-extrabold text-white outline-none placeholder:text-[#6B6F94]"
+          />
+          <button
+            type="submit"
+            className="mt-1 rounded-2xl py-4 font-display text-lg tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
+            style={{ background: "linear-gradient(135deg, #6845E0, #9B5CFF 55%, #FF4FC3)" }}
+          >
+            ENTRAR
+          </button>
+        </form>
 
         <p className="text-center text-xs font-bold text-[#6B6F94]">
-          Sin contraseña. Es gratis, siempre.
+          ¿No tenés cuenta?{" "}
+          <Link href="/signup" className="text-[#A390FF] underline">
+            Creá una
+          </Link>
         </p>
-      </form>
+      </div>
     </PhoneFrame>
   );
 }

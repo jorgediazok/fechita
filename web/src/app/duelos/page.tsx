@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
@@ -7,6 +6,8 @@ import PredictionModel from "@/models/Prediction";
 import UserModel from "@/models/User";
 import { isPast } from "@/lib/time";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { TeamBadge } from "@/components/TeamBadge";
+import { BottomNav } from "@/components/BottomNav";
 import { submitDirection, submitExactScore, runSyncNow, finishMockMatch, resetMockMatch } from "./actions";
 
 const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
@@ -39,27 +40,10 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
 });
 
-function TeamBadge({ team, size = 34 }: { team: PopulatedTeam; size?: number }) {
-  return (
-    <div
-      className="flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0B0C16]"
-      style={{ width: size, height: size }}
-    >
-      {team.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logoUrl} alt="" className="h-[70%] w-[70%] object-contain" />
-      ) : (
-        <span className="text-[9px] font-extrabold text-[#6B6F94]">
-          {team.shortName.slice(0, 3).toUpperCase()}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export default async function DuelosPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.favoriteTeamId) redirect("/onboarding");
 
   await connectToDatabase();
 
@@ -359,34 +343,7 @@ export default async function DuelosPage() {
         )}
       </div>
 
-      {/* bottom nav */}
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:inset-x-auto flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex h-8 w-10 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#6845E0] to-[#9B5CFF] shadow-[0_4px_14px_rgba(124,92,255,0.45)]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M8 21h8M12 3v6M6 9h12l-1.5 6a4.5 4.5 0 01-9 0L6 9z" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#7C5CFF]">DUELOS</span>
-        </div>
-        <Link href="/liga" className="flex flex-col items-center gap-1">
-          <div className="flex h-8 w-10 items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M4 21V10M12 21V3M20 21v-7" stroke="#6B6F94" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#6B6F94]">LIGA</span>
-        </Link>
-        <div className="flex flex-col items-center gap-1 opacity-60">
-          <div className="flex h-8 w-10 items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" stroke="#6B6F94" strokeWidth="2.4" />
-              <path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke="#6B6F94" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#6B6F94]">PERFIL</span>
-        </div>
-      </div>
+      <BottomNav active="duelos" />
       </div>
     </PhoneFrame>
   );

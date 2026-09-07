@@ -1,43 +1,23 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { connectToDatabase } from "@/lib/db";
-import UserModel from "@/models/User";
-import { setCurrentUserCookie } from "@/lib/session";
-import mongoose from "mongoose";
+import { AuthError } from "next-auth";
+import { signIn } from "@/auth";
 
-function slugify(name: string) {
-  return name
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+export async function loginWithGoogle() {
+  await signIn("google", { redirectTo: "/duelos" });
 }
 
-export async function pickUser(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) {
-    throw new Error("Ingresá un nombre");
+export async function loginWithCredentials(formData: FormData) {
+  try {
+    await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      redirectTo: "/duelos",
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      throw new Error("Email o contraseña incorrectos");
+    }
+    throw error;
   }
-
-  const clubIdRaw = String(formData.get("clubId") ?? "");
-  const favoriteTeamId = mongoose.isValidObjectId(clubIdRaw) ? clubIdRaw : undefined;
-
-  await connectToDatabase();
-
-  const slug = slugify(name) || "usuario";
-  const email = `${slug}@dev.local`;
-
-  let user = await UserModel.findOne({ email });
-  if (!user) {
-    user = await UserModel.create({ name, email, favoriteTeamId });
-  } else if (favoriteTeamId) {
-    user.favoriteTeamId = new mongoose.Types.ObjectId(favoriteTeamId);
-    await user.save();
-  }
-
-  await setCurrentUserCookie(String(user._id));
-  redirect("/duelos");
 }

@@ -2,33 +2,60 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
+import { connectToDatabase } from "@/lib/db";
+import UserModel from "@/models/User";
+import "@/models/Team"; // registra el schema para poder popular favoriteTeamId
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { TeamBadge, type BadgeTeam } from "@/components/TeamBadge";
+import { BottomNav } from "@/components/BottomNav";
+import {
+  TIER_ORDER,
+  TIER_LABELS,
+  TIER_FULL_NAMES,
+  getGroupStanding,
+  getOrCreateActiveMembership,
+  tierCanPromote,
+  tierCanRelegate,
+  zoneSize,
+  type TierCode,
+} from "@/lib/leagues";
+import { closeWeekNow } from "./actions";
 
-// Vista previa visual únicamente. El sistema real de ligas semanales (categorías
-// Primera D -> Primera División, ascenso/descenso, grupos de ~20-25 mezclados por club)
-// es la capa 3 del doc de producto y todavía no está construido — ver docs/product-design.md.
-const TIERS = [
-  { label: "D", active: false },
-  { label: "C", active: true },
-  { label: "B", active: false },
-  { label: "NAC.", active: false },
-  { label: "1RA.", active: false },
-];
+const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
 
-const ROWS = [
-  { rank: 1, name: "Nico R.", points: 210, zone: "up" as const },
-  { rank: 2, name: "Fede G.", points: 204, zone: "up" as const },
-  { rank: 3, name: "Vos", points: 198, zone: "up" as const, isMe: true },
-  { rank: 4, name: "Ceci M.", points: 192, zone: "up" as const },
-  { rank: 5, name: "Tomi A.", points: 186, zone: "up" as const },
-  { rank: 6, name: "Vale P.", points: 180, zone: "mid" as const },
-  { rank: 7, name: "Santi L.", points: 174, zone: "mid" as const },
-  { rank: 8, name: "Male F.", points: 168, zone: "mid" as const },
-];
+const daysFormatter = (closesAt: Date) => {
+  const ms = closesAt.getTime() - Date.now();
+  const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+  if (days <= 0) return "CIERRA HOY";
+  if (days === 1) return "CIERRA MAÑANA";
+  return `CIERRA EN ${days} DÍAS`;
+};
 
 export default async function LigaPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.favoriteTeamId) redirect("/onboarding");
+
+  await connectToDatabase();
+
+  const { group } = await getOrCreateActiveMembership(user._id);
+  const tier = group.tier as TierCode;
+
+  const ranked = await getGroupStanding(group._id, group.weekKey);
+  const populated = await Promise.all(
+    ranked.map(async (r) => {
+      const memberUser = await UserModel.findById(r.membership.userId).populate(
+        "favoriteTeamId",
+        "name shortName logoUrl"
+      );
+      return { ...r, memberUser };
+    })
+  );
+
+  const size = zoneSize(populated.length);
+  const canPromote = tierCanPromote(tier);
+  const canRelegate = tierCanRelegate(tier);
+  const myIndex = populated.findIndex((r) => String(r.membership.userId) === String(user._id));
 
   return (
     <PhoneFrame>
@@ -51,108 +78,117 @@ export default async function LigaPage() {
         </div>
 
         <div className="mt-3.5 flex items-end justify-between px-1">
-          {TIERS.map((tier) => (
-            <div key={tier.label} className="flex flex-col items-center gap-1.5">
-              <div
-                className={`flex items-center justify-center rounded-full ${
-                  tier.active ? "h-10 w-10 shadow-[0_6px_18px_rgba(124,92,255,0.5)]" : "h-6 w-6"
-                }`}
-                style={{ background: tier.active ? "linear-gradient(135deg, #6845E0, #9B5CFF)" : "#23244A" }}
-              >
-                <svg width={tier.active ? 20 : 11} height={tier.active ? 20 : 11} viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 2l2.6 6.6L21 9.2l-5 4.4 1.5 6.9L12 17l-5.5 3.5L8 13.6 3 9.2l6.4-.6L12 2z"
-                    fill={tier.active ? "#FFFFFF" : "#6B6F94"}
-                  />
-                </svg>
+          {TIER_ORDER.map((t) => {
+            const active = t === tier;
+            return (
+              <div key={t} className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`flex items-center justify-center rounded-full ${
+                    active ? "h-10 w-10 shadow-[0_6px_18px_rgba(124,92,255,0.5)]" : "h-6 w-6"
+                  }`}
+                  style={{ background: active ? "linear-gradient(135deg, #6845E0, #9B5CFF)" : "#23244A" }}
+                >
+                  <svg width={active ? 20 : 11} height={active ? 20 : 11} viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 2l2.6 6.6L21 9.2l-5 4.4 1.5 6.9L12 17l-5.5 3.5L8 13.6 3 9.2l6.4-.6L12 2z"
+                      fill={active ? "#FFFFFF" : "#6B6F94"}
+                    />
+                  </svg>
+                </div>
+                <div className={`font-display text-[9px] ${active ? "text-[#0B0C16]" : "text-[#0B0C16]/45"}`}>
+                  {TIER_LABELS[t]}
+                </div>
               </div>
-              <div className={`font-display text-[9px] ${tier.active ? "text-[#0B0C16]" : "text-[#0B0C16]/45"}`}>
-                {tier.label}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       <div className="relative z-10 mx-5.5 -mt-3.5 flex items-center justify-between rounded-2xl bg-[#15162A] px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
-        <div className="font-display text-lg text-[#7C5CFF]">PRIMERA C</div>
-        <div className="text-[11px] font-extrabold text-[#9195C2]">CIERRA EN 2 DÍAS</div>
+        <div className="font-display text-lg text-[#7C5CFF]">{TIER_FULL_NAMES[tier].toUpperCase()}</div>
+        <div className="text-[11px] font-extrabold text-[#9195C2]">{daysFormatter(group.closesAt)}</div>
       </div>
 
-      <div className="rounded-2xl border border-dashed border-[#7C5CFF]/50 mx-4.5 my-3.5 p-3 text-xs font-bold text-[#9195C2]">
-        Vista previa — el sistema real de ligas semanales (ascenso/descenso por categorías) todavía no está conectado.
-      </div>
+      {isMockMode && (
+        <div className="mx-4.5 my-3.5 rounded-2xl border border-dashed border-[#7C5CFF]/50 p-3.5 text-sm">
+          <p className="mb-2 font-bold text-[#B9BCDA]">Panel dev (ligas semanales)</p>
+          <form action={closeWeekNow}>
+            <button type="submit" className="rounded-xl bg-[#1F2038] px-3 py-1.5 text-xs font-bold text-[#9195C2]">
+              Cerrar semana ahora
+            </button>
+          </form>
+        </div>
+      )}
 
-      <div className="flex items-center gap-4 px-6 pb-1">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2 w-2 rounded-sm bg-[#4FD17F]" />
-          <span className="text-[11px] font-extrabold text-[#9195C2]">ASCIENDEN</span>
+      {(canPromote || canRelegate) && (
+        <div className="flex items-center gap-4 px-6 pb-1 pt-2">
+          {canPromote && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-sm bg-[#4FD17F]" />
+              <span className="text-[11px] font-extrabold text-[#9195C2]">ASCIENDEN</span>
+            </div>
+          )}
+          {canRelegate && (
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-sm bg-[#FF4D6D]" />
+              <span className="text-[11px] font-extrabold text-[#9195C2]">DESCIENDEN</span>
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2 w-2 rounded-sm bg-[#FF4D6D]" />
-          <span className="text-[11px] font-extrabold text-[#9195C2]">DESCIENDEN</span>
-        </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-1.5 px-5 py-2">
-        {ROWS.map((row) => (
-          <Fragment key={row.rank}>
-            {row.rank === 6 && (
-              <div key="ascenso-label" className="mb-1 mt-1 self-start rounded-full bg-[#16241E] px-2.5 py-1 font-display text-[10px] text-[#4FD17F]">
-                ZONA DE ASCENSO
-              </div>
-            )}
-            <div
-              key={row.rank}
-              className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ${
-                row.isMe ? "border-2 border-[#FF2D95] bg-[#23244A]" : row.zone === "up" ? "bg-[#152A20]" : "bg-[#15162A]"
-              }`}
-            >
-              <div className={`w-5 text-center font-display text-[15px] ${row.zone === "up" ? "text-[#4FD17F]" : "text-[#6B6F94]"}`}>
-                {row.rank}
-              </div>
-              <div className="flex-1 text-[13px] font-extrabold text-[#E4E6F7]">{row.name}</div>
-              {row.isMe && (
-                <div className="rounded-full bg-[#FF2D95] px-2 py-0.5 font-display text-[9px] text-[#0B0C16] shadow-[0_0_14px_rgba(255,45,149,0.55)]">
-                  VOS
+        {populated.map((row, i) => {
+          const isMe = String(row.membership.userId) === String(user._id);
+          const relegationStartsAt = populated.length - size;
+          const zone = canPromote && i < size ? "up" : canRelegate && i >= relegationStartsAt ? "down" : "mid";
+          const team = row.memberUser?.favoriteTeamId as BadgeTeam | undefined;
+
+          return (
+            <Fragment key={String(row.membership._id)}>
+              {canRelegate && size > 0 && i === relegationStartsAt && (
+                <div className="mb-1 mt-1 self-start rounded-full bg-[#2A1620] px-2.5 py-1 font-display text-[10px] text-[#FF4D6D]">
+                  ZONA DE DESCENSO
                 </div>
               )}
-              <div className="font-display text-sm">{row.points}</div>
-            </div>
-          </Fragment>
-        ))}
+              {i === 0 && canPromote && size > 0 && (
+                <div className="mb-1 self-start rounded-full bg-[#16241E] px-2.5 py-1 font-display text-[10px] text-[#4FD17F]">
+                  ZONA DE ASCENSO
+                </div>
+              )}
+              <div
+                className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ${
+                  isMe ? "border-2 border-[#FF2D95] bg-[#23244A]" : zone === "up" ? "bg-[#152A20]" : zone === "down" ? "bg-[#2A1620]" : "bg-[#15162A]"
+                }`}
+              >
+                <div
+                  className={`w-5 text-center font-display text-[15px] ${
+                    zone === "up" ? "text-[#4FD17F]" : zone === "down" ? "text-[#FF4D6D]" : "text-[#6B6F94]"
+                  }`}
+                >
+                  {i + 1}
+                </div>
+                {team ? <TeamBadge team={team} size={26} /> : <div className="h-[26px] w-[26px]" />}
+                <div className="flex-1 text-[13px] font-extrabold text-[#E4E6F7]">{row.memberUser?.name ?? "?"}</div>
+                {isMe && (
+                  <div className="rounded-full bg-[#FF2D95] px-2 py-0.5 font-display text-[9px] text-[#0B0C16] shadow-[0_0_14px_rgba(255,45,149,0.55)]">
+                    VOS
+                  </div>
+                )}
+                <div className="font-display text-sm">{row.points}</div>
+              </div>
+            </Fragment>
+          );
+        })}
+
+        {populated.length === 1 && myIndex === 0 && (
+          <p className="px-1 pt-2 text-xs font-bold text-[#6B6F94]">
+            Sos el único en tu liga esta semana — hace falta más gente para que haya ascenso/descenso.
+          </p>
+        )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:inset-x-auto flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
-        <Link href="/duelos" className="flex flex-col items-center gap-1">
-          <div className="flex h-8 w-10 items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M4 4h7v7H4V4zM13 4h7v7h-7V4zM4 13h7v7H4v-7zM13 13h7v7h-7v-7z" stroke="#6B6F94" strokeWidth="2.4" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#6B6F94]">DUELOS</span>
-        </Link>
-        <div className="flex flex-col items-center gap-1">
-          <div
-            className="flex h-8 w-10 items-center justify-center rounded-[10px] shadow-[0_4px_14px_rgba(124,92,255,0.45)]"
-            style={{ background: "linear-gradient(135deg, #6845E0, #9B5CFF)" }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M4 21V10M12 21V3M20 21v-7" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#7C5CFF]">LIGA</span>
-        </div>
-        <div className="flex flex-col items-center gap-1 opacity-60">
-          <div className="flex h-8 w-10 items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" stroke="#6B6F94" strokeWidth="2.4" />
-              <path d="M4 21c0-4 4-6 8-6s8 2 8 6" stroke="#6B6F94" strokeWidth="2.4" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="text-[9px] font-extrabold text-[#6B6F94]">PERFIL</span>
-        </div>
-      </div>
+      <BottomNav active="liga" />
       </div>
     </PhoneFrame>
   );
