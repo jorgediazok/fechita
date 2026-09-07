@@ -25,8 +25,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   if (!isMember) redirect("/grupos");
 
   return (
-    <PhoneFrame>
-      <div className="pb-28">
+    <PhoneFrame nav={<BottomNav active="grupos" />}>
         <div
           className="px-6 pt-5 pb-8"
           style={{
@@ -83,9 +82,6 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
             </button>
           </form>
         </div>
-
-        <BottomNav active="grupos" />
-      </div>
     </PhoneFrame>
   );
 }

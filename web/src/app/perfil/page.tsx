@@ -15,8 +15,7 @@ export default async function PerfilPage() {
   const team = user.favoriteTeamId as unknown as BadgeTeam;
 
   return (
-    <PhoneFrame>
-      <div className="pb-28">
+    <PhoneFrame nav={<BottomNav active="perfil" />}>
         <div
           className="px-6 pt-5 pb-8"
           style={{
@@ -44,9 +43,6 @@ export default async function PerfilPage() {
             </button>
           </form>
         </div>
-
-        <BottomNav active="perfil" />
-      </div>
     </PhoneFrame>
   );
 }

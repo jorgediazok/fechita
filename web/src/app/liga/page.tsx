@@ -58,8 +58,7 @@ export default async function LigaPage() {
   const myIndex = populated.findIndex((r) => String(r.membership.userId) === String(user._id));
 
   return (
-    <PhoneFrame>
-      <div className="pb-28">
+    <PhoneFrame nav={<BottomNav active="liga" />}>
       <div
         className="px-6 pt-5 pb-8"
         style={{
@@ -186,9 +185,6 @@ export default async function LigaPage() {
             Sos el único en tu liga esta semana — hace falta más gente para que haya ascenso/descenso.
           </p>
         )}
-      </div>
-
-      <BottomNav active="liga" />
       </div>
     </PhoneFrame>
   );

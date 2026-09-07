@@ -90,8 +90,7 @@ export default async function DuelosPage() {
   }
 
   return (
-    <PhoneFrame>
-      <div className="pb-28">
+    <PhoneFrame nav={<BottomNav active="duelos" />}>
       {/* hero */}
       <div
         className="px-6 pt-5 pb-8"
@@ -341,9 +340,6 @@ export default async function DuelosPage() {
             {isMockMode && ' Usá el botón "Sincronizar partidos ahora".'}
           </p>
         )}
-      </div>
-
-      <BottomNav active="duelos" />
       </div>
     </PhoneFrame>
   );

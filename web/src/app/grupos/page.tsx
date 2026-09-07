@@ -14,8 +14,7 @@ export default async function GruposPage() {
   const myGroups = await getUserGroups(user._id);
 
   return (
-    <PhoneFrame>
-      <div className="pb-28">
+    <PhoneFrame nav={<BottomNav active="grupos" />}>
         <div
           className="px-6 pt-5 pb-8"
           style={{
@@ -95,9 +94,6 @@ export default async function GruposPage() {
             </button>
           </form>
         </div>
-
-        <BottomNav active="grupos" />
-      </div>
     </PhoneFrame>
   );
 }

@@ -49,7 +49,7 @@ const ITEMS: { key: NavKey; href: string; label: string; icon: React.ReactNode }
 
 export function BottomNav({ active }: { active: NavKey }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 md:sticky md:inset-x-auto flex items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
+    <div className="flex shrink-0 items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
       {ITEMS.map((item) => {
         const isActive = item.key === active;
         return (
