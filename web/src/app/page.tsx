@@ -87,7 +87,8 @@ export default async function Home() {
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
             <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
-                El prode del fútbol argentino, con liga semanal.
+                El prode del fútbol argentino,{" "}
+                <span className="block">con liga semanal.</span>
               </h1>
               <p className="mt-4 max-w-lg text-base font-bold text-[#9195C2] mx-auto md:mx-0">
                 Pronosticá la fecha, sumá puntos y subí de categoría compitiendo contra otros hinchas.
