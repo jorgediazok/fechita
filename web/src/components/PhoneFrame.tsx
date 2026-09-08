@@ -1,9 +1,11 @@
 export function PhoneFrame({
   children,
   nav,
+  overlay,
 }: {
   children: React.ReactNode;
   nav?: React.ReactNode;
+  overlay?: React.ReactNode;
 }) {
   return (
     <div className="h-dvh w-full bg-[#050608] md:flex md:h-screen md:items-center md:justify-center md:py-10">
@@ -25,6 +27,10 @@ export function PhoneFrame({
         `}</style>
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
         {nav}
+        {/* Igual que el nav, hermano del contenedor con scroll — así un overlay a pantalla
+            completa (ej. anuncio de ascenso/descenso) no se corta ni se scrollea con el
+            contenido de abajo. */}
+        {overlay}
       </main>
     </div>
   );

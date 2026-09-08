@@ -10,6 +10,15 @@ import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
 import { submitExactScore, runSyncNow, finishMockMatch, resetMockMatch, postponeMockMatch } from "./actions";
 import { DirectionPicker } from "./DirectionPicker";
+import {
+  getOrCreateActiveMembership,
+  getGroupStanding,
+  zoneSize,
+  tierCanPromote,
+  tierCanRelegate,
+  TIER_FULL_NAMES,
+  type TierCode,
+} from "@/lib/leagues";
 
 const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
 
@@ -64,29 +73,31 @@ export default async function PronosticosPage() {
     matchId: { $in: matches.map((m) => m._id) },
   }).lean()) as unknown as LeanPrediction[];
   const predictionByMatch = new Map(predictions.map((p) => [String(p.matchId), p]));
-  const totalPoints = predictions.reduce((sum, p) => sum + (p.points ?? 0), 0);
 
-  // Ranking real entre todos los usuarios que se loguearon en esta instancia. Todavía no existe
-  // el sistema real de "ligas semanales" (capas 3-6 del doc) con categorías/ascenso-descenso —
-  // esto es un ranking global simple a modo de base visual para esa futura mecánica.
-  const allUsers = (await UserModel.find({}).select("_id name").lean()) as unknown as {
-    _id: string;
-    name: string;
-  }[];
-  const totalsByUser = await PredictionModel.aggregate<{ _id: string; total: number }>([
-    { $match: { points: { $ne: null } } },
-    { $group: { _id: "$userId", total: { $sum: "$points" } } },
-  ]);
-  const totalsMap = new Map(totalsByUser.map((t) => [String(t._id), t.total]));
-  const leaderboard = allUsers
-    .map((u) => ({ id: String(u._id), name: u.name, total: totalsMap.get(String(u._id)) ?? 0 }))
-    .sort((a, b) => b.total - a.total);
+  // Tu posición real dentro de tu grupo de ~20 de la liga semanal — no un ranking global
+  // contra todos los usuarios de la app (esa idea se descartó a propósito, ver
+  // docs/product-design.md: un ranking de todo el país desmotiva más de lo que engancha).
+  const { group } = await getOrCreateActiveMembership(user._id);
+  const tier = group.tier as TierCode;
+  const ranked = await getGroupStanding(group._id, group.weekKey);
+  const leaderboard = await Promise.all(
+    ranked.map(async (r) => {
+      const memberUser = await UserModel.findById(r.membership.userId).select("name");
+      return { id: String(r.membership.userId), name: memberUser?.name ?? "?", total: r.points };
+    })
+  );
   const myIndex = leaderboard.findIndex((u) => u.id === String(user._id));
   const myRank = myIndex + 1;
   const totalPlayers = leaderboard.length;
+  const totalPoints = leaderboard[myIndex]?.total ?? 0;
   const nearby = leaderboard.slice(Math.max(0, myIndex - 2), myIndex + 3);
   const gapToNext = myIndex > 0 ? leaderboard[myIndex - 1].total - leaderboard[myIndex].total : 0;
   const positionPct = totalPlayers > 1 ? (myIndex / (totalPlayers - 1)) * 100 : 0;
+  const canPromote = tierCanPromote(tier);
+  const canRelegate = tierCanRelegate(tier);
+  const zone = zoneSize(totalPlayers);
+  const ascentPct = canPromote && totalPlayers > 0 ? (zone / totalPlayers) * 100 : 0;
+  const descentPct = canRelegate && totalPlayers > 0 ? (zone / totalPlayers) * 100 : 0;
 
   const matchesByRound = new Map<string, PopulatedMatch[]>();
   for (const match of matches) {
@@ -137,24 +148,30 @@ export default async function PronosticosPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <div className="text-[12px] font-extrabold tracking-wide text-[#F5F5FF]">
-                    DE {totalPlayers} JUGADORES
+                    {TIER_FULL_NAMES[tier].toUpperCase()} · DE {totalPlayers} JUGADORES
                   </div>
-                  <div className="text-[11px] font-extrabold text-[#F5F5FF]/65">{totalPoints} pts en total</div>
+                  <div className="text-[11px] font-extrabold text-[#F5F5FF]/65">{totalPoints} pts esta semana</div>
                 </div>
               </div>
 
               <div className="relative mt-3.5 h-2.5 rounded-full bg-white/12">
-                <div className="absolute left-0 top-0 h-full w-[26%] rounded-l-full bg-white/18" />
-                <div className="absolute right-0 top-0 h-full w-[26%] rounded-r-full bg-[#FF2D95]/40" />
+                {canPromote && (
+                  <div className="absolute left-0 top-0 h-full rounded-l-full bg-white/18" style={{ width: `${ascentPct}%` }} />
+                )}
+                {canRelegate && (
+                  <div className="absolute right-0 top-0 h-full rounded-r-full bg-[#FF2D95]/40" style={{ width: `${descentPct}%` }} />
+                )}
                 <div
                   className="absolute -top-[5px] h-5 w-5 rounded-full border-[3px] border-white bg-[#0B0C16] shadow-[0_0_0_4px_rgba(11,12,22,0.3)]"
                   style={{ left: `${positionPct}%`, transform: "translateX(-50%)" }}
                 />
               </div>
-              <div className="mt-1 flex justify-between text-[9px] font-extrabold tracking-wide text-[#F5F5FF]/50">
-                <span>ZONA DE ASCENSO</span>
-                <span>ZONA DE DESCENSO</span>
-              </div>
+              {(canPromote || canRelegate) && (
+                <div className="mt-1 flex justify-between text-[9px] font-extrabold tracking-wide text-[#F5F5FF]/50">
+                  <span>{canPromote ? "ZONA DE ASCENSO" : ""}</span>
+                  <span>{canRelegate ? "ZONA DE DESCENSO" : ""}</span>
+                </div>
+              )}
 
               <div className="mt-3 flex justify-center">
                 <div

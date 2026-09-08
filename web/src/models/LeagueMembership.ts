@@ -7,6 +7,9 @@ const LeagueMembershipSchema = new Schema({
   // standing en vivo se calcula aparte (ver getLivePoints en lib/leagues.ts).
   points: { type: Number, default: 0 },
   result: { type: String, enum: ["promoted", "relegated", "stayed"], default: null },
+  // Si ya se le mostró al usuario el anuncio de ascenso/descenso de este resultado
+  // (ver getPendingLeagueResult en lib/leagues.ts) — evita repetirlo en cada visita.
+  resultAcknowledged: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 

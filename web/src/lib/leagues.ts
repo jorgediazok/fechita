@@ -42,7 +42,25 @@ export function getWeekBoundsForKey(weekKey: string) {
   return { weekStart, weekEnd };
 }
 
-export function getWeekBounds(date: Date = new Date()) {
+// Solo para el panel dev de /liga ("Cerrar semana ahora"): sin esto, forzar el cierre de
+// un grupo sin esperar a que pase una semana real recrea el grupo siguiente con el mismo
+// weekKey de hoy — mismas predicciones ya cargadas, mismos puntos en vivo, como si nada
+// hubiera pasado. Este offset simula el paso de semanas reales sin tocar Date.now() global
+// (los kickoffAt de los partidos siguen siendo reales, así que los puntos sí arrancan en 0
+// en la semana "futura" simulada). Vive solo en memoria — se pierde al reiniciar el server,
+// como el resto del estado mock (ver mockProvider.ts).
+let devWeekOffsetDays = 0;
+
+export function bumpDevWeek() {
+  devWeekOffsetDays += 7;
+}
+
+export function getSimulatedNow() {
+  const real = Date.now();
+  return process.env.API_FOOTBALL_MODE === "live" ? real : real + devWeekOffsetDays * DAY_MS;
+}
+
+export function getWeekBounds(date: Date = new Date(getSimulatedNow())) {
   const weekKey = mondayKeyFor(date);
   const { weekStart, weekEnd } = getWeekBoundsForKey(weekKey);
   return { weekKey, weekStart, weekEnd };
@@ -121,6 +139,48 @@ async function closeGroup(group: InstanceType<typeof WeeklyLeagueGroupModel>) {
 
   group.status = "closed";
   await group.save();
+}
+
+// Busca el último ascenso/descenso que el usuario todavía no vio anunciado — se dispara
+// una sola vez por resultado (ver resultAcknowledged en el modelo). "stayed" no genera
+// anuncio, solo promoted/relegated.
+export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
+  const membership = await LeagueMembershipModel.findOne({
+    userId,
+    result: { $in: ["promoted", "relegated"] },
+    resultAcknowledged: { $ne: true },
+  }).sort({ createdAt: -1 });
+  if (!membership) return null;
+
+  const group = await WeeklyLeagueGroupModel.findById(membership.groupId);
+  if (!group) return null;
+
+  const finalMemberships = await LeagueMembershipModel.find({ groupId: group._id }).sort({ points: -1 });
+  const standings = await Promise.all(
+    finalMemberships.map(async (m) => {
+      const memberUser = await UserModel.findById(m.userId).populate("favoriteTeamId", "name shortName logoUrl");
+      return {
+        userId: String(m.userId),
+        name: memberUser?.name ?? "?",
+        points: m.points,
+        result: m.result as "promoted" | "relegated" | "stayed" | null,
+        team: (memberUser?.favoriteTeamId ?? null) as { name: string; shortName: string; logoUrl: string } | null,
+      };
+    })
+  );
+
+  return {
+    membershipId: String(membership._id),
+    result: membership.result as "promoted" | "relegated",
+    oldTier: group.tier as TierCode,
+    points: membership.points,
+    standings,
+  };
+}
+
+export async function acknowledgeLeagueResult(membershipId: Types.ObjectId | string) {
+  await connectToDatabase();
+  await LeagueMembershipModel.findByIdAndUpdate(membershipId, { resultAcknowledged: true });
 }
 
 export async function closeExpiredGroups() {
