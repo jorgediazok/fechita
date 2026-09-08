@@ -83,7 +83,7 @@ export default async function Home() {
           </Link>
         </header>
 
-        <main className="flex flex-1 flex-col justify-center py-8">
+        <main className="flex flex-1 flex-col justify-start py-8 lg:justify-center">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
             <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
