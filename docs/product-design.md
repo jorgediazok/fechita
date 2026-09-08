@@ -31,7 +31,7 @@ Deliberadamente **no** se cubren ligas de otros países — ir angosto y profund
 
 ## Nombre de la app
 
-Todavía sin resolver. Se evaluaron y descartaron: "Cómo Van", "Cómo Salieron", "Quién Ganó", "Resultado Final", "Ganó o Perdió" (muy literales, suenan a categoría de sitio, no a marca), "La Fija", "Cantala", "La Posta", "Ojo Clínico" (rechazados sin razón específica), "Tribuna" (colisiona con marca real de medios deportivos, Tribuna.com edición Argentina). Dirección más prometedora explorada: "La Cargada" (jerga argentina para la joda/burla que le hacés a alguien cuando le ganás algo) — dominios `lacargada.com.ar` / `lacargada.app` / `cargada.app` verificados libres al 2026-09-04, pero tampoco confirmado como definitivo.
+Todavía sin resolver. Se evaluaron y descartaron: "Cómo Van", "Cómo Salieron", "Quién Ganó", "Resultado Final", "Ganó o Perdió" (muy literales, suenan a categoría de sitio, no a marca), "La Fija", "Cantala", "La Posta", "Ojo Clínico" (rechazados sin razón específica), "Tribuna" (colisiona con marca real de medios deportivos, Tribuna.com edición Argentina). "La Cargada" (jerga argentina para la joda/burla que le hacés a alguien cuando le ganás algo) se exploró como la dirección más prometedora y se descartó 2026-09-08 — a Jorge no le gusta.
 
 **"Cómo Van" se usa acá solo como placeholder de trabajo** para poder nombrar el repo y avanzar con la arquitectura sin bloquearse en branding.
 
