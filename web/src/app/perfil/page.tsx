@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import "@/models/Team"; // registra el schema para poder popular favoriteTeamId
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -34,6 +35,12 @@ export default async function PerfilPage() {
             <div className="font-display text-lg text-[#E4E6F7]">{user.name}</div>
             <div className="text-[11px] font-bold text-[#6B6F94]">{user.email}</div>
           </div>
+          <Link
+            href="/perfil/equipo"
+            className="rounded-full bg-[#1F2038] px-4 py-1.5 text-[11px] font-bold text-[#9195C2]"
+          >
+            Cambiar de club
+          </Link>
         </div>
 
         <div className="mx-4.5 mt-4">
@@ -42,6 +49,12 @@ export default async function PerfilPage() {
               Cerrar sesión
             </button>
           </form>
+        </div>
+
+        <div className="mx-4.5 mt-6 flex justify-center">
+          <Link href="/perfil/eliminar" className="text-xs font-bold text-[#FF4D6D]/70 underline">
+            Eliminar cuenta
+          </Link>
         </div>
     </PhoneFrame>
   );
