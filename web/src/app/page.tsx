@@ -68,7 +68,7 @@ export default async function Home() {
         }}
       />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-5xl flex-col px-6 py-6 sm:px-8">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-6 py-8 sm:px-8 sm:py-10">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#0B0C16]">
@@ -83,34 +83,34 @@ export default async function Home() {
           </Link>
         </header>
 
-        <main className="flex flex-1 flex-col justify-center py-12">
-          <div className="grid items-center gap-10 md:grid-cols-[1fr_auto] md:gap-14">
+        <main className="flex flex-1 flex-col justify-center py-8">
+          <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
             <div className="lp-in">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
                 El prode del fútbol argentino, con liga semanal.
               </h1>
-              <p className="mt-5 max-w-md text-base font-bold text-[#9195C2]">
+              <p className="mt-4 max-w-lg text-base font-bold text-[#9195C2]">
                 Pronosticá la fecha, sumá puntos y subí de categoría compitiendo contra otros hinchas.
                 Sin plata de por medio — solo por el orgullo.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/signup"
-                  className="rounded-2xl px-6 py-3.5 font-display text-base tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
+                  className="rounded-2xl px-6 py-3 font-display text-base tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
                   style={{ background: "linear-gradient(135deg, #6845E0, #9B5CFF 55%, #FF4FC3)" }}
                 >
                   CREAR CUENTA
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-2xl border-2 border-[#2A2C48] px-6 py-3.5 font-display text-base tracking-wide text-white hover:border-[#7C5CFF]"
+                  className="rounded-2xl border-2 border-[#2A2C48] px-6 py-3 font-display text-base tracking-wide text-white hover:border-[#7C5CFF]"
                 >
                   YA TENGO CUENTA
                 </Link>
               </div>
 
-              <div className="mt-7 flex items-center gap-3">
+              <div className="mt-6 flex items-center gap-3">
                 <div
                   className="h-16 w-16 shrink-0 rounded-lg bg-white p-1 [&_svg]:h-full [&_svg]:w-full"
                   // El SVG lo genera la librería qrcode a partir de SITE_URL, no de input de usuario.
@@ -133,24 +133,24 @@ export default async function Home() {
             </div>
           </div>
 
-          <ul className="mt-16 grid gap-4 sm:grid-cols-3">
+          <ul className="mt-10 grid gap-4 sm:grid-cols-3">
             {FEATURES.map((f, i) => (
               <li
                 key={f.title}
-                className="lp-in rounded-2xl bg-[#15162A] p-5"
+                className="lp-in rounded-2xl bg-[#15162A] p-4"
                 style={{ animationDelay: `${200 + i * 90}ms` }}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-[#A390FF]" aria-hidden="true">
                   {f.icon}
                 </svg>
-                <h2 className="mt-3 font-display text-base">{f.title}</h2>
+                <h2 className="mt-2.5 font-display text-base">{f.title}</h2>
                 <p className="mt-1.5 text-[13px] font-bold leading-relaxed text-[#9195C2]">{f.body}</p>
               </li>
             ))}
           </ul>
         </main>
 
-        <footer className="border-t border-[#1F2038] pt-6 text-xs font-bold text-[#8A8FB2]">
+        <footer className="border-t border-[#1F2038] pt-5 text-xs font-bold text-[#8A8FB2]">
           {SITE_NAME} · Hecho para el hincha argentino.
         </footer>
       </div>
@@ -160,7 +160,7 @@ export default async function Home() {
 
 function PhoneMock() {
   return (
-    <div className="lp-float relative w-[248px] overflow-hidden rounded-[34px] bg-[#0B0C16] p-2.5 shadow-[0_40px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/10">
+    <div className="lp-float relative w-60 overflow-hidden rounded-[34px] bg-[#0B0C16] p-2.5 shadow-[0_40px_90px_rgba(0,0,0,0.55)] ring-1 ring-white/10">
       <div className="overflow-hidden rounded-[26px]">
         {/* hero */}
         <div
