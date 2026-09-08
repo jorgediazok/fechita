@@ -1,15 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import "./globals.css";
 
-const anton = Anton({
-  variable: "--font-display",
-  weight: "400",
-  subsets: ["latin"],
-  display: "swap",
-});
-
+// Una sola familia para toda la app. Los títulos usan la utilidad `font-display`
+// (ver globals.css), que ahora resuelve a Manrope en peso 800 — Anton, una display
+// condensada de un solo peso, se veía saturada como fuente de sistema.
 const manrope = Manrope({
   variable: "--font-body",
   subsets: ["latin"],
@@ -81,7 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-AR"
-      className={`${anton.variable} ${manrope.variable} h-full antialiased`}
+      className={`${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

@@ -83,7 +83,7 @@ export default async function Home() {
           </Link>
         </header>
 
-        <main className="flex flex-1 flex-col justify-center py-8 [@media(min-height:1250px)]:justify-start [@media(min-height:1250px)]:pt-[12vh]">
+        <main className="flex flex-1 flex-col justify-start pt-[8vh] pb-8 lg:pt-[10vh]">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
             <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
@@ -98,16 +98,16 @@ export default async function Home() {
               <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
                 <Link
                   href="/signup"
-                  className="rounded-2xl px-6 py-3 font-display text-base tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
+                  className="rounded-2xl px-6 py-3 text-base font-extrabold text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
                   style={{ background: "linear-gradient(135deg, #6845E0, #9B5CFF 55%, #FF4FC3)" }}
                 >
-                  CREAR CUENTA
+                  Crear cuenta
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-2xl border-2 border-[#2A2C48] px-6 py-3 font-display text-base tracking-wide text-white hover:border-[#7C5CFF]"
+                  className="rounded-2xl border-2 border-[#2A2C48] px-6 py-3 text-base font-extrabold text-white hover:border-[#7C5CFF]"
                 >
-                  YA TENGO CUENTA
+                  Ya tengo cuenta
                 </Link>
               </div>
 
