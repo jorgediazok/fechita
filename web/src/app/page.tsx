@@ -85,16 +85,16 @@ export default async function Home() {
 
         <main className="flex flex-1 flex-col justify-center py-8">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
-            <div className="lp-in">
+            <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
                 El prode del fútbol argentino, con liga semanal.
               </h1>
-              <p className="mt-4 max-w-lg text-base font-bold text-[#9195C2]">
+              <p className="mt-4 max-w-lg text-base font-bold text-[#9195C2] mx-auto md:mx-0">
                 Pronosticá la fecha, sumá puntos y subí de categoría compitiendo contra otros hinchas.
                 Sin plata de por medio — solo por el orgullo.
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
                 <Link
                   href="/signup"
                   className="rounded-2xl px-6 py-3 font-display text-base tracking-wide text-white shadow-[0_10px_28px_rgba(124,92,255,0.4)]"
@@ -110,7 +110,7 @@ export default async function Home() {
                 </Link>
               </div>
 
-              <div className="mt-6 flex items-center gap-3">
+              <div className="mt-6 flex items-center justify-center gap-3 md:justify-start">
                 <div
                   className="h-16 w-16 shrink-0 rounded-lg bg-white p-1 [&_svg]:h-full [&_svg]:w-full"
                   // El SVG lo genera la librería qrcode a partir de SITE_URL, no de input de usuario.
@@ -137,10 +137,10 @@ export default async function Home() {
             {FEATURES.map((f, i) => (
               <li
                 key={f.title}
-                className="lp-in rounded-2xl bg-[#15162A] p-4"
+                className="lp-in rounded-2xl bg-[#15162A] p-4 text-center sm:text-left"
                 style={{ animationDelay: `${200 + i * 90}ms` }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-[#A390FF]" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="mx-auto text-[#A390FF] sm:mx-0" aria-hidden="true">
                   {f.icon}
                 </svg>
                 <h2 className="mt-2.5 font-display text-base">{f.title}</h2>
