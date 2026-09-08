@@ -7,7 +7,12 @@ import { signIn } from "@/auth";
 import { connectToDatabase } from "@/lib/db";
 import UserModel from "@/models/User";
 
-export async function signupAction(formData: FormData) {
+export type SignupState = { error?: string };
+
+export async function signupAction(
+  _prev: SignupState,
+  formData: FormData
+): Promise<SignupState> {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "")
     .toLowerCase()
@@ -15,16 +20,16 @@ export async function signupAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const clubId = String(formData.get("clubId") ?? "");
 
-  if (!name) throw new Error("Ingresá tu nombre");
-  if (!email) throw new Error("Ingresá un email válido");
-  if (password.length < 6) throw new Error("La contraseña tiene que tener al menos 6 caracteres");
-  if (!mongoose.isValidObjectId(clubId)) throw new Error("Elegí un club");
+  if (!name) return { error: "Ingresá tu nombre." };
+  if (!email) return { error: "Ingresá un email válido." };
+  if (password.length < 6) return { error: "La contraseña tiene que tener al menos 6 caracteres." };
+  if (!mongoose.isValidObjectId(clubId)) return { error: "Elegí tu club." };
 
   await connectToDatabase();
 
   const existing = await UserModel.findOne({ email });
   if (existing) {
-    throw new Error("Ya existe una cuenta con ese email");
+    return { error: "Ya existe una cuenta con ese email. Probá entrar." };
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -33,9 +38,12 @@ export async function signupAction(formData: FormData) {
   try {
     await signIn("credentials", { email, password, redirectTo: "/pronosticos" });
   } catch (error) {
+    // El NEXT_REDIRECT del login exitoso se re-lanza; solo el AuthError se muestra.
     if (error instanceof AuthError) {
-      throw new Error("La cuenta se creó pero no se pudo iniciar sesión, entrá desde /login");
+      return { error: "La cuenta se creó pero no pudimos iniciar sesión. Entrá desde la pantalla de login." };
     }
     throw error;
   }
+
+  return {};
 }

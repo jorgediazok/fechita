@@ -58,6 +58,7 @@ Inspirado en las ligas de Duolingo, pero con identidad 100% argentina:
 - Al cerrar la semana: ~top 5 ascienden de categoría, ~últimos 5 descienden, el resto se mantiene.
 - Primera División (el techo) no tiene ascenso — ahí compite la élite de la app permanentemente.
 - Reemplaza una idea anterior de ranking geolocalizado por barrio/provincia (descartada por fricción de permisos/batería de geolocalización en vivo — la pertenencia por club + liga rotativa cumple la misma función de "engachar al que no tiene amigos futboleros" sin ese costo técnico).
+- **Bots (decidido 2026-09-08)**: para el arranque, cuando haya pocos jugadores reales, hay 20 usuarios bot que pronostican solos antes de cada partido y compiten en las ligas como cualquiera (ascienden/descienden igual). Se muestran con un tag "BOT" — no son rivales encubiertos, es a propósito. Pronostican con un criterio simple (favorito/local pesado por una tabla tosca de fuerza de equipo, con más o menos azar según un "nivel" por bot) para que la tabla tenga spread creíble. Implementación en `web/src/lib/bots/` (ver `CLAUDE.md`). A medida que entren jugadores reales se puede bajar la cantidad o sacarlos.
 
 ### Premios
 Sin dinero ni apuestas — descartado por riesgo legal/regulatorio de juego en Argentina, validado además con el caso real de la app Pasito (su fundador declaró públicamente que lo que más motiva no es el canje de premios sino el ranking en sí mismo). Alternativa sugerida si se quiere algo "picante" sin plata de por medio: una prenda/desafío para el último de la semana (costumbre ya existente en los prodes de oficina argentinos) — no implementada, solo sugerida.
@@ -88,7 +89,7 @@ Se hicieron mockups mobile-first en un canvas de diseño (iterado varias veces c
 - **DB**: MongoDB
 - **Datos de partidos**: API-Football (api-football.com, registro directo en su propio dashboard — no hace falta pasar por RapidAPI), sincronizado por cron a la DB propia — nunca exponer la API externa directo a usuarios finales, así el costo escala con cantidad de partidos sincronizados, no con cantidad de usuarios. **Ojo**: el free tier (100 req/día) **no da acceso a la temporada actual**, solo a temporadas 2022-2024 (confirmado contra la API real, 2026-09-06) — para partidos reales y en curso hace falta el plan Pro (~USD 19/mes, 7.500 req/día). Se investigaron alternativas gratis con cobertura de fútbol argentino actual (football-data.org, TheSportsDB) y ninguna sirve: la primera no cubre Argentina/Sudamérica en su free tier, la segunda limita a 15 requests de por vida el endpoint que se necesita. Mientras tanto, desarrollo sigue con datos simulados (ver `CLAUDE.md`) hasta que se decida pagar el plan Pro.
 - **Resultados en vivo** (si se implementa más adelante): caché compartida con TTL de 60-90s, solo pollear partidos con espectadores activos — mismo principio de desacople. Requiere plan pago de API-Football (~$10-19/mes) para volumen real de partidos simultáneos.
-- **Mobile**: arrancar como PWA (instalable, casi gratis de agregar sobre Next.js). El código de Next.js no cambia según esta decisión, así que no bloquea empezar a construir.
+- **Mobile**: arrancar como PWA (instalable, casi gratis de agregar sobre Next.js). El código de Next.js no cambia según esta decisión, así que no bloquea empezar a construir. Las pantallas de la app son mobile-first (columna angosta, `PhoneFrame`) a propósito — un prode se usa en el celular. La puerta de entrada en desktop es la landing (`/`, ver `CLAUDE.md`), que hoy invita a abrirla en el celular con un QR y queda armada para cambiar el QR por badges de las tiendas cuando se haga la transición a Capacitor.
 - **Pendiente de decidir** (2026-09-04): cómo llegar a las stores para maximizar descargas masivas — objetivo explícito del producto es "que lo descargue todo el mundo", con preferencia mobile. Opción evaluada con mejor fit dado el perfil del creador (senior frontend, fuerte en Next.js, sin experiencia previa en apps nativas): **Capacitor** — empaqueta la misma app web en un proyecto nativo real para publicar en Play Store ($25 pago único) y App Store ($99/año), reusando ~todo el código Next.js sin reescribir en React Native. Alternativa descartada por ahora: React Native/Expo (más popular y más performante nativamente, pero exige reescribir la UI). Revisar esta decisión una vez que el loop central esté funcionando como PWA — no antes.
 
 ## Modelo de datos — capas 1 y 2 (definidas en detalle)
@@ -194,3 +195,18 @@ Resumen de alto nivel, todavía sin definir campo por campo:
 ## Orden de construcción sugerido
 
 Arrancar con las capas 1+2 nomás (sincronizar partidos + cargar pronósticos + calcular puntos) y tenerlo funcionando de punta a punta antes de tocar grupos, ligas semanales, insignias o trivia — esas cuatro capas son aditivas y no rompen nada del loop central si se agregan después.
+
+## Endurecer auth y registro (PENDIENTE — bloqueante antes de difundir la app públicamente)
+
+Estado hoy (2026-09-08): NextAuth v5, Google OAuth + email/contraseña (bcrypt, mínimo 6 caracteres), sesión JWT sin adapter. Anda para desarrollo y para validar, pero es rudimentario. **No difundir la URL / no promocionar hasta cerrar esto:**
+
+- **Sin verificación de email**: cualquiera se registra con un mail que no es suyo.
+- **Sin rate limiting ni captcha**: un script puede crear miles de cuentas. El daño real no es la DB (miles de usuarios son KB) sino que `enrollUserForCurrentWeek` mete cada registro en un grupo de Primera D → decenas de grupos basura con cuentas que no juegan, y los usuarios reales de la D compiten contra fantasmas con el ascenso/descenso deformado. Además cada signup corre un bcrypt (~100ms CPU) → una ráfaga spikea el server / dispara la factura de Vercel.
+- **Sin "olvidé mi contraseña"**.
+
+Plan en dos niveles:
+
+1. **Rápido, antes de cualquier difusión** (~medio día): Cloudflare Turnstile (captcha gratis, sin fricción) en el form de signup + rate limit por IP en los server actions de signup/login (Upstash Redis, estándar en Vercel).
+2. **De fondo**: verificación de email + **no inscribir en la liga semanal a los usuarios no verificados** (separar "existe la cuenta" de "participa"). Esto necesita infra de mail (Resend, free tier generoso) — que es el mismo laburo que se necesita para "olvidé mi contraseña" y para los recordatorios de retención ("la fecha arranca en 2h"): una sola inversión, triple uso.
+
+Decisión abierta: ¿seguir con contraseñas o pasar a magic link (login por email sin contraseña, built-in en NextAuth v5)? Para una app casual y mobile, Google + magic link cubriría el 100% sin passwords que resetear ni filtrar, a costa de fricción en cada login.

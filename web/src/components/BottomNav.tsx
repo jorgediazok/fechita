@@ -47,12 +47,20 @@ const ITEMS: { key: NavKey; href: string; label: string; icon: React.ReactNode }
 
 export function BottomNav({ active }: { active: NavKey }) {
   return (
-    <div className="flex shrink-0 items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]">
+    <nav
+      aria-label="Navegación principal"
+      className="flex shrink-0 items-center justify-between bg-[#15162A] px-6 py-3.5 pb-5 shadow-[0_-4px_20px_rgba(0,0,0,0.35)]"
+    >
       {ITEMS.map((item) => {
         const isActive = item.key === active;
         return (
-          <Link key={item.key} href={item.href} className="flex flex-col items-center gap-1">
-            <div
+          <Link
+            key={item.key}
+            href={item.href}
+            aria-current={isActive ? "page" : undefined}
+            className="flex flex-col items-center gap-1 rounded-lg"
+          >
+            <span
               className={`flex h-8 w-10 items-center justify-center rounded-[10px] ${
                 isActive ? "shadow-[0_4px_14px_rgba(124,92,255,0.45)]" : ""
               }`}
@@ -63,18 +71,19 @@ export function BottomNav({ active }: { active: NavKey }) {
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke={isActive ? "#FFFFFF" : "#6B6F94"}
-                style={{ color: isActive ? "#FFFFFF" : "#6B6F94" }}
+                aria-hidden="true"
+                stroke={isActive ? "#FFFFFF" : "#8A8FB2"}
+                style={{ color: isActive ? "#FFFFFF" : "#8A8FB2" }}
               >
                 {item.icon}
               </svg>
-            </div>
-            <span className={`text-[9px] font-extrabold ${isActive ? "text-[#7C5CFF]" : "text-[#6B6F94]"}`}>
+            </span>
+            <span className={`text-[9px] font-extrabold ${isActive ? "text-[#A390FF]" : "text-[#8A8FB2]"}`}>
               {item.label}
             </span>
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }

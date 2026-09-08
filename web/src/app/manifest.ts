@@ -1,15 +1,21 @@
 import type { MetadataRoute } from "next";
+import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Cómo Van",
-    short_name: "Cómo Van",
-    description: "Prode de fútbol argentino: pronósticos, ligas semanales y rivalidad entre amigos.",
+    id: "/",
+    name: SITE_NAME,
+    short_name: SITE_NAME,
+    description: SITE_DESCRIPTION,
     start_url: "/",
+    scope: "/",
     display: "standalone",
+    orientation: "portrait",
+    dir: "ltr",
+    lang: "es-AR",
+    categories: ["sports", "games", "entertainment"],
     background_color: "#0B0C16",
     theme_color: "#0B0C16",
-    lang: "es-AR",
     icons: [
       {
         src: "/icon-192x192.png",

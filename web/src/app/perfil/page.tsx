@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
@@ -6,6 +7,11 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { TeamBadge, type BadgeTeam } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
 import { logoutAction } from "./actions";
+
+export const metadata: Metadata = {
+  title: "Tu perfil",
+  robots: { index: false, follow: false },
+};
 
 export default async function PerfilPage() {
   const user = await getCurrentUser();
@@ -25,15 +31,15 @@ export default async function PerfilPage() {
           }}
         >
           <div className="flex items-center justify-center text-white">
-            <div className="font-display text-lg">PERFIL</div>
+            <h1 className="font-display text-lg">PERFIL</h1>
           </div>
         </div>
 
         <div className="mx-4.5 mt-4 flex flex-col items-center gap-3 rounded-2xl bg-[#15162A] px-4 py-6 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
           <TeamBadge team={team} size={64} />
           <div className="text-center">
-            <div className="font-display text-lg text-[#E4E6F7]">{user.name}</div>
-            <div className="text-[11px] font-bold text-[#6B6F94]">{user.email}</div>
+            <p className="font-display text-lg text-[#E4E6F7]">{user.name}</p>
+            <p className="text-[11px] font-bold text-[#8A8FB2]">{user.email}</p>
           </div>
           <Link
             href="/perfil/equipo"
@@ -52,7 +58,7 @@ export default async function PerfilPage() {
         </div>
 
         <div className="mx-4.5 mt-6 flex justify-center">
-          <Link href="/perfil/eliminar" className="text-xs font-bold text-[#FF4D6D]/70 underline">
+          <Link href="/perfil/eliminar" className="rounded px-2 py-1 text-xs font-bold text-[#FF4D6D] underline">
             Eliminar cuenta
           </Link>
         </div>

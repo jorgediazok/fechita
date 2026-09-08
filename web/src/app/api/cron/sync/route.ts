@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { syncAllCompetitions } from "@/lib/sync";
+import { runBots } from "@/lib/bots";
 
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -11,5 +12,6 @@ export async function GET(request: NextRequest) {
   }
 
   const results = await syncAllCompetitions();
-  return NextResponse.json({ ok: true, results });
+  const bots = await runBots();
+  return NextResponse.json({ ok: true, results, bots });
 }

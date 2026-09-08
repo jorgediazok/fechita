@@ -12,6 +12,11 @@ const UserSchema = new Schema({
   // Categoría de la liga semanal (capa 3). Persiste entre semanas aunque las
   // ligas en sí se resetean — ver docs/product-design.md.
   currentTier: { type: String, enum: TIER_ORDER, default: "D" },
+  // Usuario "bot" para dar vida a las ligas mientras haya pocos jugadores reales:
+  // pronostica solo antes de cada kickoff (ver src/lib/bots/) y asciende/desciende
+  // como cualquiera. botSkill (0..1) regula qué tan seguido le pega — solo en bots.
+  isBot: { type: Boolean, default: false },
+  botSkill: { type: Number },
   createdAt: { type: Date, default: Date.now },
 });
 

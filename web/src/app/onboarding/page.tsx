@@ -1,11 +1,18 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/db";
 import TeamModel from "@/models/Team";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { ClubPicker } from "@/components/ClubPicker";
 import { setFavoriteTeam } from "./actions";
 
 type LeanTeam = { _id: string; name: string; shortName: string; logoUrl: string };
+
+export const metadata: Metadata = {
+  title: "Elegí tu club",
+  robots: { index: false, follow: false },
+};
 
 export default async function OnboardingPage() {
   const user = await getCurrentUser();
@@ -35,32 +42,7 @@ export default async function OnboardingPage() {
       </div>
 
       <form action={setFavoriteTeam} className="flex flex-col gap-6 px-7 py-7">
-        <div className="grid grid-cols-4 gap-x-2 gap-y-4">
-          {teams.map((team, i) => (
-            <label key={String(team._id)} className="flex cursor-pointer flex-col items-center gap-1.5">
-              <input
-                type="radio"
-                name="clubId"
-                value={String(team._id)}
-                defaultChecked={i === 0}
-                className="peer sr-only"
-              />
-              <span className="flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full bg-[#15162A] shadow-[0_0_0_2px_#2A2C48] peer-checked:shadow-[0_0_0_3px_#7C5CFF] peer-checked:[filter:drop-shadow(0_0_10px_rgba(124,92,255,0.65))] peer-checked:-rotate-6 transition-transform">
-                {team.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={team.logoUrl} alt="" className="h-9 w-9 object-contain" />
-                ) : (
-                  <span className="text-xs font-extrabold text-[#6B6F94]">
-                    {team.shortName.slice(0, 3).toUpperCase()}
-                  </span>
-                )}
-              </span>
-              <span className="text-center text-[10px] font-extrabold text-[#9195C2] peer-checked:text-[#7C5CFF]">
-                {team.shortName}
-              </span>
-            </label>
-          ))}
-        </div>
+        <ClubPicker teams={teams} legend="Elegí tu club" />
 
         <button
           type="submit"

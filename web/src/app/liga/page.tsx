@@ -22,11 +22,17 @@ import {
   type TierCode,
 } from "@/lib/leagues";
 import { closeWeekNow, acknowledgeResult } from "./actions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Liga semanal",
+  robots: { index: false, follow: false },
+};
 
 const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
 
-const daysFormatter = (closesAt: Date) => {
-  const ms = closesAt.getTime() - getSimulatedNow();
+const daysFormatter = (closesAt: Date, now: number) => {
+  const ms = closesAt.getTime() - now;
   const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
   if (days <= 0) return "CIERRA HOY";
   if (days === 1) return "CIERRA MAÑANA";
@@ -41,6 +47,7 @@ export default async function LigaPage() {
   await connectToDatabase();
 
   const { group } = await getOrCreateActiveMembership(user._id);
+  const simulatedNow = await getSimulatedNow();
   const tier = group.tier as TierCode;
   const pendingResult = await getPendingLeagueResult(user._id);
 
@@ -154,7 +161,7 @@ export default async function LigaPage() {
             >
               <div
                 className="mb-2.5 px-0.5 text-left text-[10px] font-extrabold tracking-wide"
-                style={{ color: promoted ? "rgba(255,255,255,0.7)" : "#6B6F94" }}
+                style={{ color: promoted ? "rgba(255,255,255,0.7)" : "#8A8FB2" }}
               >
                 TABLA FINAL · {TIER_FULL_NAMES[pendingResult.oldTier].toUpperCase()}
               </div>
@@ -162,7 +169,7 @@ export default async function LigaPage() {
                 {pendingResult.standings.map((row, i) => {
                   const isMe = row.userId === String(user._id);
                   const zoneColor =
-                    row.result === "promoted" ? "#4FD17F" : row.result === "relegated" ? "#FF4D6D" : "#6B6F94";
+                    row.result === "promoted" ? "#4FD17F" : row.result === "relegated" ? "#FF4D6D" : "#8A8FB2";
                   return (
                     <div
                       key={row.userId}
@@ -186,6 +193,7 @@ export default async function LigaPage() {
                         style={{ color: promoted ? "#FFFFFF" : "#E4E6F7" }}
                       >
                         {row.name}
+                        {row.isBot && <span className="ml-1 text-[9px] font-extrabold text-[#8A8FB2]">BOT</span>}
                       </span>
                       <span className="text-[12px] font-extrabold" style={{ color: zoneColor }}>
                         {row.points}
@@ -220,12 +228,12 @@ export default async function LigaPage() {
         }}
       >
         <div className="flex items-center justify-between text-white">
-          <Link href="/pronosticos">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <Link href="/pronosticos" aria-label="Volver a pronósticos" className="rounded-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <div className="font-display text-lg">LIGA SEMANAL</div>
+          <h1 className="font-display text-lg">LIGA SEMANAL</h1>
           <div className="w-5" />
         </div>
 
@@ -243,7 +251,7 @@ export default async function LigaPage() {
                   <svg width={active ? 20 : 11} height={active ? 20 : 11} viewBox="0 0 24 24" fill="none">
                     <path
                       d="M12 2l2.6 6.6L21 9.2l-5 4.4 1.5 6.9L12 17l-5.5 3.5L8 13.6 3 9.2l6.4-.6L12 2z"
-                      fill={active ? "#FFFFFF" : "#6B6F94"}
+                      fill={active ? "#FFFFFF" : "#8A8FB2"}
                     />
                   </svg>
                 </div>
@@ -258,7 +266,7 @@ export default async function LigaPage() {
 
       <div className="relative z-10 mx-5.5 mt-4 flex items-center justify-between rounded-2xl bg-[#15162A] px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
         <div className="font-display text-lg text-[#7C5CFF]">{TIER_FULL_NAMES[tier].toUpperCase()}</div>
-        <div className="text-[11px] font-extrabold text-[#9195C2]">{daysFormatter(group.closesAt)}</div>
+        <div className="text-[11px] font-extrabold text-[#9195C2]">{daysFormatter(group.closesAt, simulatedNow)}</div>
       </div>
 
       {isMockMode && (
@@ -315,13 +323,20 @@ export default async function LigaPage() {
               >
                 <div
                   className={`w-5 text-center font-display text-[15px] ${
-                    zone === "up" ? "text-[#4FD17F]" : zone === "down" ? "text-[#FF4D6D]" : "text-[#6B6F94]"
+                    zone === "up" ? "text-[#4FD17F]" : zone === "down" ? "text-[#FF4D6D]" : "text-[#8A8FB2]"
                   }`}
                 >
                   {i + 1}
                 </div>
                 {team ? <TeamBadge team={team} size={26} /> : <div className="h-[26px] w-[26px]" />}
-                <div className="flex-1 text-[13px] font-extrabold text-[#E4E6F7]">{row.memberUser?.name ?? "?"}</div>
+                <div className="flex flex-1 items-center gap-1.5">
+                  <span className="text-[13px] font-extrabold text-[#E4E6F7]">{row.memberUser?.name ?? "?"}</span>
+                  {row.memberUser?.isBot && (
+                    <span className="rounded bg-[#2A2C48] px-1.5 py-0.5 font-display text-[8px] tracking-wide text-[#8A8FB2]">
+                      BOT
+                    </span>
+                  )}
+                </div>
                 {isMe && (
                   <div className="rounded-full bg-[#FF2D95] px-2 py-0.5 font-display text-[9px] text-[#0B0C16] shadow-[0_0_14px_rgba(255,45,149,0.55)]">
                     VOS
@@ -334,7 +349,7 @@ export default async function LigaPage() {
         })}
 
         {populated.length === 1 && myIndex === 0 && (
-          <p className="px-1 pt-2 text-xs font-bold text-[#6B6F94]">
+          <p className="px-1 pt-2 text-xs font-bold text-[#8A8FB2]">
             Sos el único en tu liga esta semana — hace falta más gente para que haya ascenso/descenso.
           </p>
         )}

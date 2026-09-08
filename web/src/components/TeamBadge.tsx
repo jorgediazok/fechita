@@ -8,9 +8,15 @@ export function TeamBadge({ team, size = 34 }: { team: BadgeTeam; size?: number 
     >
       {team.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.logoUrl} alt="" className="h-[70%] w-[70%] object-contain" />
+        <img
+          src={team.logoUrl}
+          alt={`Escudo de ${team.name}`}
+          loading="lazy"
+          decoding="async"
+          className="h-[70%] w-[70%] object-contain"
+        />
       ) : (
-        <span className="text-[9px] font-extrabold text-[#6B6F94]">
+        <span className="text-[9px] font-extrabold text-[#8A8FB2]">
           {team.shortName.slice(0, 3).toUpperCase()}
         </span>
       )}

@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { deleteAccountAction } from "./actions";
+
+export const metadata: Metadata = {
+  title: "Eliminar cuenta",
+  robots: { index: false, follow: false },
+};
 
 export default async function EliminarCuentaPage() {
   const user = await getCurrentUser();
@@ -18,19 +24,19 @@ export default async function EliminarCuentaPage() {
         }}
       >
         <div className="flex items-center justify-between text-white">
-          <Link href="/perfil">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <Link href="/perfil" aria-label="Volver al perfil" className="rounded-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <div className="font-display text-lg">ELIMINAR CUENTA</div>
+          <h1 className="font-display text-lg">ELIMINAR CUENTA</h1>
           <div className="w-5" />
         </div>
       </div>
 
       <div className="flex flex-col gap-5 px-6 py-7">
         <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#2A1620] p-5 text-center">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="#FF4D6D" strokeWidth="2" />
             <path d="M12 8v5" stroke="#FF4D6D" strokeWidth="2.4" strokeLinecap="round" />
             <path d="M12 16.5h.01" stroke="#FF4D6D" strokeWidth="2.8" strokeLinecap="round" />

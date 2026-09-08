@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/db";
@@ -10,6 +11,7 @@ import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
 import { submitExactScore, runSyncNow, finishMockMatch, resetMockMatch, postponeMockMatch } from "./actions";
 import { DirectionPicker } from "./DirectionPicker";
+import { CompetitionTabs } from "./CompetitionTabs";
 import {
   getOrCreateActiveMembership,
   getGroupStanding,
@@ -19,6 +21,11 @@ import {
   TIER_FULL_NAMES,
   type TierCode,
 } from "@/lib/leagues";
+
+export const metadata: Metadata = {
+  title: "Pronósticos",
+  robots: { index: false, follow: false },
+};
 
 const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
 
@@ -82,16 +89,32 @@ export default async function PronosticosPage() {
   const ranked = await getGroupStanding(group._id, group.weekKey);
   const leaderboard = await Promise.all(
     ranked.map(async (r) => {
-      const memberUser = await UserModel.findById(r.membership.userId).select("name");
-      return { id: String(r.membership.userId), name: memberUser?.name ?? "?", total: r.points };
+      const memberUser = await UserModel.findById(r.membership.userId).select("name isBot");
+      return {
+        id: String(r.membership.userId),
+        name: memberUser?.name ?? "?",
+        isBot: memberUser?.isBot ?? false,
+        total: r.points,
+      };
     })
   );
   const myIndex = leaderboard.findIndex((u) => u.id === String(user._id));
   const myRank = myIndex + 1;
   const totalPlayers = leaderboard.length;
   const totalPoints = leaderboard[myIndex]?.total ?? 0;
-  const nearby = leaderboard.slice(Math.max(0, myIndex - 2), myIndex + 3);
+  // Solo el de arriba y el de abajo — la tabla completa vive en /liga, acá sería redundante.
+  const nearby = leaderboard.slice(Math.max(0, myIndex - 1), myIndex + 2);
   const gapToNext = myIndex > 0 ? leaderboard[myIndex - 1].total - leaderboard[myIndex].total : 0;
+  // Al arrancar la semana casi nadie tiene puntos: "a 0 pts del 17°" suena mal. Mensaje
+  // neutro mientras no sumaste nada; competitivo recién cuando hay diferencia real.
+  const rankMessageNeutral = totalPoints === 0;
+  const rankMessage = rankMessageNeutral
+    ? "Todavía no sumaste puntos esta semana"
+    : myIndex === 0
+      ? "Vas 1°, no aflojes"
+      : gapToNext === 0
+        ? `Empatás con el ${myRank - 1}°`
+        : `Estás a ${gapToNext} pt${gapToNext === 1 ? "" : "s"} del ${myRank - 1}°`;
   const positionPct = totalPlayers > 1 ? (myIndex / (totalPlayers - 1)) * 100 : 0;
   const canPromote = tierCanPromote(tier);
   const canRelegate = tierCanRelegate(tier);
@@ -113,6 +136,7 @@ export default async function PronosticosPage() {
 
   return (
     <PhoneFrame nav={<BottomNav active="pronosticos" />}>
+      <h1 className="sr-only">Pronósticos de la fecha y tu posición en la liga</h1>
       {/* hero */}
       <div
         className="px-5 pt-5 pb-8"
@@ -134,7 +158,7 @@ export default async function PronosticosPage() {
               {user.name.toUpperCase()} · {totalPoints} PTS
             </span>
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/10">
-              <svg width="16" height="16" viewBox="0 -960 960 960" fill="#F5F5FF">
+              <svg width="16" height="16" viewBox="0 -960 960 960" fill="#F5F5FF" aria-hidden="true">
                 <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm200-500 54-18 16-54q-32-48-77-82.5T574-786l-54 38v56l160 112Zm-400 0 160-112v-56l-54-38q-54 17-99 51.5T210-652l16 54 54 18Zm-42 308 46-4 30-54-58-174-56-20-40 30q0 65 18 118.5T238-272Zm293 108q25-4 49-12l28-60-26-44H378l-26 44 28 60q24 8 49 12t51 4q26 0 51-4ZM390-360h180l56-160-146-102-144 102 54 160Zm332 88q42-50 60-103.5T800-494l-40-28-56 18-58 174 30 54 46 4Z" />
               </svg>
             </div>
@@ -148,7 +172,7 @@ export default async function PronosticosPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <div className="text-[12px] font-extrabold tracking-wide text-[#F5F5FF]">
-                    {TIER_FULL_NAMES[tier].toUpperCase()} · DE {totalPlayers} JUGADORES
+                    DE {totalPlayers} JUGADORES · {TIER_FULL_NAMES[tier].toUpperCase()}
                   </div>
                   <div className="text-[11px] font-extrabold text-[#F5F5FF]/65">{totalPoints} pts esta semana</div>
                 </div>
@@ -175,10 +199,16 @@ export default async function PronosticosPage() {
 
               <div className="mt-3 flex justify-center">
                 <div
-                  className="rounded-full px-4 py-1.5 text-[11px] font-extrabold tracking-wide text-[#4FD17F]"
-                  style={{ background: "rgba(79,209,127,0.16)", border: "1px solid rgba(79,209,127,0.4)" }}
+                  className={`rounded-full px-4 py-1.5 text-[12px] font-extrabold ${
+                    rankMessageNeutral ? "text-[#B9BCDA]" : "text-[#4FD17F]"
+                  }`}
+                  style={
+                    rankMessageNeutral
+                      ? { background: "rgba(245,245,255,0.10)", border: "1px solid rgba(245,245,255,0.18)" }
+                      : { background: "rgba(79,209,127,0.16)", border: "1px solid rgba(79,209,127,0.4)" }
+                  }
                 >
-                  {myIndex === 0 ? "SOS 1°" : `A ${gapToNext} PTS DEL ${myRank - 1}°`}
+                  {rankMessage}
                 </div>
               </div>
             </>
@@ -186,28 +216,37 @@ export default async function PronosticosPage() {
         </div>
       </div>
 
-      {/* tu zona en la tabla */}
-      {nearby.length > 1 && (
+      {/* tu lugar en la tabla — sin sentido si nadie sumó todavía */}
+      {totalPoints > 0 && nearby.length > 1 && (
         <div className="px-4.5 pt-3.5 pb-1">
-          <div className="mb-2 text-[11px] font-extrabold tracking-wide text-[#6B6F94]">
-            TU ZONA EN LA TABLA
-          </div>
-          <div className="flex gap-2 overflow-x-auto">
+          <h2 className="mb-2 text-[11px] font-extrabold tracking-wide text-[#8A8FB2]">
+            TU LUGAR EN LA TABLA
+          </h2>
+          <div className="flex flex-col gap-1 rounded-2xl bg-[#15162A] p-1.5">
             {nearby.map((n) => {
               const isMe = n.id === String(user._id);
               const rank = leaderboard.indexOf(n) + 1;
+              const inAscent = canPromote && rank <= zone;
+              const inDescent = canRelegate && rank > totalPlayers - zone;
+              const rankColor = inAscent ? "text-[#4FD17F]" : inDescent ? "text-[#FF4D6D]" : "text-[#8A8FB2]";
               return (
                 <div
                   key={n.id}
-                  className={`flex flex-shrink-0 items-center gap-1.5 rounded-full py-1.5 pl-1 pr-3 ${
-                    isMe ? "border-[1.5px] border-[#7C5CFF] bg-[#23244A]" : "border-[1.5px] border-transparent bg-[#15162A]"
+                  className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 ${
+                    isMe ? "bg-[#23244A] shadow-[inset_0_0_0_1.5px_#7C5CFF]" : ""
                   }`}
                 >
-                  <span className={`w-3.5 text-center text-[11px] font-extrabold ${isMe ? "text-[#A390FF]" : "text-[#6B6F94]"}`}>
-                    {rank}
+                  <span className={`w-4 text-center font-display text-[13px] ${rankColor}`}>{rank}</span>
+                  <span className="flex-1 truncate text-[12px] font-extrabold text-[#E4E6F7]">
+                    {n.name}
+                    {n.isBot && <span className="ml-1 text-[9px] font-extrabold text-[#8A8FB2]">BOT</span>}
                   </span>
-                  <span className="text-[11px] font-extrabold text-[#E4E6F7]">{n.name}</span>
-                  <span className="text-[11px] font-extrabold text-[#9195C2]">{n.total}</span>
+                  {isMe && (
+                    <span className="rounded-full bg-[#FF2D95] px-1.5 py-0.5 font-display text-[8px] text-[#0B0C16]">
+                      VOS
+                    </span>
+                  )}
+                  <span className="font-display text-[13px] text-[#9195C2]">{n.total}</span>
                 </div>
               );
             })}
@@ -228,23 +267,12 @@ export default async function PronosticosPage() {
       )}
 
       {/* competencias */}
-      <div className="flex gap-1.5 overflow-x-auto px-4.5 pb-2 pt-1">
-        <span className="flex-shrink-0 rounded-full bg-gradient-to-br from-[#6845E0] to-[#9B5CFF] px-3 py-1.5 text-[10px] font-extrabold tracking-wide">
-          LIGA
-        </span>
-        <span className="flex-shrink-0 rounded-full bg-[#1F2038] px-3 py-1.5 text-[10px] font-extrabold tracking-wide text-[#57628A]" title="Todavía no sincronizada">
-          COPA ARGENTINA
-        </span>
-        <span className="flex-shrink-0 rounded-full bg-[#1F2038] px-3 py-1.5 text-[10px] font-extrabold tracking-wide text-[#57628A]" title="Todavía no sincronizada">
-          LIBERTADORES
-        </span>
-      </div>
-
+      <CompetitionTabs>
       {/* feed */}
       <div className="flex flex-col gap-3.5 px-4.5 pb-6">
         {visibleRounds.map(([round, roundMatches]) => (
           <div key={round} className="flex flex-col gap-2.5">
-            <div className="text-xs font-extrabold tracking-wide text-[#6B6F94]">
+            <div className="text-xs font-extrabold tracking-wide text-[#8A8FB2]">
               PENDIENTES · {round.toUpperCase()}
             </div>
 
@@ -268,7 +296,7 @@ export default async function PronosticosPage() {
                     {prediction?.points != null && (
                       <div
                         className={`absolute -right-1.5 -top-3.5 flex h-11 w-11 items-center justify-center rounded-full font-display text-[11px] text-[#0B0C16] ${
-                          prediction.points === 5 ? "bg-[#FF2D95]" : prediction.points === 3 ? "bg-[#4FD17F]" : "bg-[#2A2C48] text-[#6B6F94]"
+                          prediction.points === 5 ? "bg-[#FF2D95]" : prediction.points === 3 ? "bg-[#4FD17F]" : "bg-[#2A2C48] text-[#8A8FB2]"
                         }`}
                       >
                         +{prediction.points}
@@ -296,7 +324,7 @@ export default async function PronosticosPage() {
                       {match.homeTeamId.shortName} vs. {match.awayTeamId.shortName}
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <div className="text-[10px] font-extrabold text-[#6B6F94]">
+                      <div className="text-[10px] font-extrabold text-[#8A8FB2]">
                         {dateFormatter.format(new Date(match.kickoffAt))}
                       </div>
                       {match.status === "postponed" && (
@@ -309,7 +337,7 @@ export default async function PronosticosPage() {
                   </div>
 
                   {kickoffPassed ? (
-                    <p className="text-xs font-bold text-[#6B6F94]">Ya arrancó, carga cerrada.</p>
+                    <p className="text-xs font-bold text-[#8A8FB2]">Ya arrancó, carga cerrada.</p>
                   ) : (
                     <>
                       <DirectionPicker
@@ -318,7 +346,7 @@ export default async function PronosticosPage() {
                       />
 
                       <details className="group flex flex-col items-center">
-                        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#6B6F94] [&::-webkit-details-marker]:hidden">
+                        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#8A8FB2] [&::-webkit-details-marker]:hidden">
                           ¿EXACTO? +5 PTS
                           <svg
                             className="transition-transform duration-200 group-open:rotate-180"
@@ -337,7 +365,7 @@ export default async function PronosticosPage() {
                             name="homeScore"
                             min={0}
                             defaultValue={prediction?.predictedHomeScore ?? undefined}
-                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF] outline-none"
+                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF]"
                           />
                           <span className="font-display text-xs text-[#3A3D5C]">-</span>
                           <input
@@ -345,7 +373,7 @@ export default async function PronosticosPage() {
                             name="awayScore"
                             min={0}
                             defaultValue={prediction?.predictedAwayScore ?? undefined}
-                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF] outline-none"
+                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF]"
                           />
                           <button type="submit" className="ml-1.5 rounded-lg bg-[#1F2038] px-3 py-1.5 text-[11px] font-bold text-[#9195C2]">
                             Guardar
@@ -393,18 +421,19 @@ export default async function PronosticosPage() {
         ))}
 
         {matches.length === 0 && (
-          <p className="text-sm text-[#6B6F94]">
+          <p className="text-sm text-[#8A8FB2]">
             Todavía no hay partidos sincronizados.
             {isMockMode && ' Usá el botón "Sincronizar partidos ahora".'}
           </p>
         )}
 
         {matches.length > 0 && visibleRounds.length === 0 && (
-          <p className="text-sm text-[#6B6F94]">
+          <p className="text-sm text-[#8A8FB2]">
             La próxima fecha todavía no arranca — se habilita 3 días antes de su primer partido.
           </p>
         )}
       </div>
+      </CompetitionTabs>
     </PhoneFrame>
   );
 }

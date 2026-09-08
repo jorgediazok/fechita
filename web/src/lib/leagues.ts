@@ -4,6 +4,7 @@ import WeeklyLeagueGroupModel from "@/models/WeeklyLeagueGroup";
 import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserModel from "@/models/User";
 import PredictionModel from "@/models/Prediction";
+import DevStateModel from "@/models/DevState";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -47,21 +48,35 @@ export function getWeekBoundsForKey(weekKey: string) {
 // weekKey de hoy — mismas predicciones ya cargadas, mismos puntos en vivo, como si nada
 // hubiera pasado. Este offset simula el paso de semanas reales sin tocar Date.now() global
 // (los kickoffAt de los partidos siguen siendo reales, así que los puntos sí arrancan en 0
-// en la semana "futura" simulada). Vive solo en memoria — se pierde al reiniciar el server,
-// como el resto del estado mock (ver mockProvider.ts).
-let devWeekOffsetDays = 0;
+// en la semana "futura" simulada). Se persiste en DevState porque `next dev` reinicia el
+// proceso seguido y un offset en memoria dejaba a los usuarios repartidos entre weekKeys
+// distintos sin poder cruzarse en la misma liga.
+const DEV_STATE_KEY = "singleton";
 
-export function bumpDevWeek() {
-  devWeekOffsetDays += 7;
+async function getDevWeekOffsetDays(): Promise<number> {
+  if (process.env.API_FOOTBALL_MODE === "live") return 0;
+  const state = await DevStateModel.findOne({ key: DEV_STATE_KEY });
+  return state?.weekOffsetDays ?? 0;
 }
 
-export function getSimulatedNow() {
+export async function bumpDevWeek() {
+  await connectToDatabase();
+  await DevStateModel.findOneAndUpdate(
+    { key: DEV_STATE_KEY },
+    { $inc: { weekOffsetDays: 7 } },
+    { upsert: true }
+  );
+}
+
+export async function getSimulatedNow(): Promise<number> {
   const real = Date.now();
-  return process.env.API_FOOTBALL_MODE === "live" ? real : real + devWeekOffsetDays * DAY_MS;
+  if (process.env.API_FOOTBALL_MODE === "live") return real;
+  return real + (await getDevWeekOffsetDays()) * DAY_MS;
 }
 
-export function getWeekBounds(date: Date = new Date(getSimulatedNow())) {
-  const weekKey = mondayKeyFor(date);
+export async function getWeekBounds(date?: Date) {
+  const resolved = date ?? new Date(await getSimulatedNow());
+  const weekKey = mondayKeyFor(resolved);
   const { weekStart, weekEnd } = getWeekBoundsForKey(weekKey);
   return { weekKey, weekStart, weekEnd };
 }
@@ -162,6 +177,7 @@ export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
       return {
         userId: String(m.userId),
         name: memberUser?.name ?? "?",
+        isBot: memberUser?.isBot ?? false,
         points: m.points,
         result: m.result as "promoted" | "relegated" | "stayed" | null,
         team: (memberUser?.favoriteTeamId ?? null) as { name: string; shortName: string; logoUrl: string } | null,
@@ -189,21 +205,37 @@ export async function closeExpiredGroups() {
     status: "active",
     closesAt: { $lte: new Date() },
   });
+  if (expiredGroups.length === 0) return;
+
+  const affectedUserIds = new Set<string>();
   for (const group of expiredGroups) {
+    const memberships = await LeagueMembershipModel.find({ groupId: group._id }, { userId: 1 });
+    for (const m of memberships) affectedUserIds.add(String(m.userId));
     await closeGroup(group);
+  }
+
+  // Reinscribir a todos los que estaban en un grupo que se cerró: sin esto, la membresía
+  // en la categoría nueva (o la misma, si se quedó) recién se creaba cuando ese usuario
+  // volvía a abrir /liga — dos que ascienden juntos no se cruzaban hasta que ambos
+  // recargaban la pantalla. Ahora, apenas se cierra la semana, el grupo siguiente queda
+  // armado con todos adentro y en su tier actualizado.
+  for (const userId of affectedUserIds) {
+    await enrollUserForCurrentWeek(userId);
   }
 }
 
 const MAX_GROUP_SIZE = 24;
 
-export async function getOrCreateActiveMembership(userId: Types.ObjectId | string) {
+// Encuentra (o crea) el grupo de la semana actual para el tier del usuario y le garantiza
+// una membresía en él. No cierra semanas vencidas — de eso se encarga closeExpiredGroups,
+// que a su vez llama acá; separarlos evita una recursión.
+export async function enrollUserForCurrentWeek(userId: Types.ObjectId | string) {
   await connectToDatabase();
-  await closeExpiredGroups();
 
   const user = await UserModel.findById(userId);
   if (!user) throw new Error("Usuario no encontrado");
 
-  const { weekKey, weekEnd } = getWeekBounds();
+  const { weekKey, weekEnd } = await getWeekBounds();
   const tier = (user.currentTier ?? "D") as TierCode;
 
   const groups = await WeeklyLeagueGroupModel.find({ weekKey, tier, status: "active" });
@@ -236,4 +268,10 @@ export async function getOrCreateActiveMembership(userId: Types.ObjectId | strin
   }
 
   return { group: group!, membership, user };
+}
+
+export async function getOrCreateActiveMembership(userId: Types.ObjectId | string) {
+  await connectToDatabase();
+  await closeExpiredGroups();
+  return enrollUserForCurrentWeek(userId);
 }

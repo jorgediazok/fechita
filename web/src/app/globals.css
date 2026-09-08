@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
   --background: #0b0c16;
   --foreground: #e4e6f7;
   --card: #15162a;
   --border: #262844;
-  --muted: #6b6f94;
+  /* Gris secundario: subido de #6b6f94 para pasar contraste AA (4.5:1) sobre el fondo
+     y las tarjetas — el texto chico con el gris viejo quedaba en ~4:1. */
+  --muted: #8a8fb2;
   --muted-light: #9195c2;
   --violet: #7c5cff;
   --violet-dark: #6845e0;
@@ -25,4 +28,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
+}
+
+/* Foco visible y consistente para teclado en todo lo interactivo. Varios inputs traían
+   `outline-none` sin reemplazo — un usuario de teclado no veía dónde estaba parado. */
+:focus-visible {
+  outline: 2px solid #a390ff;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Respeta "reducir movimiento" del sistema: animaciones y transiciones al mínimo. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

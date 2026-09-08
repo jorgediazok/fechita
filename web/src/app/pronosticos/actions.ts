@@ -8,6 +8,7 @@ import PredictionModel from "@/models/Prediction";
 import { PREDICTION_DIRECTIONS } from "@/models/Prediction";
 import { getCurrentUser } from "@/lib/session";
 import { syncAllCompetitions } from "@/lib/sync";
+import { runBots } from "@/lib/bots";
 import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/api-football";
 import { isPast } from "@/lib/time";
 
@@ -71,6 +72,7 @@ export async function submitExactScore(formData: FormData) {
 
 export async function runSyncNow() {
   await syncAllCompetitions();
+  await runBots();
   revalidatePath("/pronosticos");
 }
 
@@ -101,6 +103,7 @@ export async function resetMockMatch(formData: FormData) {
 
   await connectToDatabase();
   await PredictionModel.deleteMany({ matchId });
+  await runBots();
 
   revalidatePath("/pronosticos");
 }

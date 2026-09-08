@@ -6,6 +6,11 @@ import { submitDirection } from "./actions";
 type Direction = "home" | "draw" | "away";
 
 const LABELS: Record<Direction, string> = { home: "L", draw: "E", away: "V" };
+const A11Y_LABELS: Record<Direction, string> = {
+  home: "Gana el local",
+  draw: "Empate",
+  away: "Gana el visitante",
+};
 
 export function DirectionPicker({
   matchId,
@@ -21,13 +26,15 @@ export function DirectionPicker({
   );
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" role="group" aria-label="Tu pronóstico">
       {(["home", "draw", "away"] as const).map((dir) => {
         const selected = optimisticDirection === dir;
         return (
           <button
             key={dir}
             type="button"
+            aria-pressed={selected}
+            aria-label={A11Y_LABELS[dir]}
             onClick={() => {
               startTransition(async () => {
                 setOptimisticDirection(dir);
@@ -40,7 +47,7 @@ export function DirectionPicker({
                 : "bg-[#1F2038] text-[#9195C2]"
             }`}
           >
-            {LABELS[dir]}
+            <span aria-hidden="true">{LABELS[dir]}</span>
           </button>
         );
       })}
