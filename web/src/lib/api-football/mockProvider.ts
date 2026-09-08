@@ -64,6 +64,15 @@ export function setMockResult(fixtureExternalId: number, homeScore: number, away
   fixture.goals.away = awayScore;
 }
 
+export function postponeMockFixture(fixtureExternalId: number) {
+  seedIfNeeded();
+  const fixture = mockFixtures.get(fixtureExternalId);
+  if (!fixture) {
+    throw new Error(`Fixture mock ${fixtureExternalId} no existe`);
+  }
+  fixture.fixture.status.short = "PST";
+}
+
 export function resetMockFixture(fixtureExternalId: number) {
   seedIfNeeded();
   const fixture = mockFixtures.get(fixtureExternalId);

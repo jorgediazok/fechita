@@ -8,15 +8,12 @@ import PredictionModel from "@/models/Prediction";
 import { PREDICTION_DIRECTIONS } from "@/models/Prediction";
 import { getCurrentUser } from "@/lib/session";
 import { syncAllCompetitions } from "@/lib/sync";
-import { setMockResult, resetMockFixture } from "@/lib/api-football";
+import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/api-football";
 import { isPast } from "@/lib/time";
 
-export async function submitDirection(formData: FormData) {
+export async function submitDirection(matchId: string, direction: string) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  const matchId = String(formData.get("matchId"));
-  const direction = String(formData.get("direction"));
 
   if (!PREDICTION_DIRECTIONS.includes(direction as (typeof PREDICTION_DIRECTIONS)[number])) {
     throw new Error("Dirección de pronóstico inválida");
@@ -37,7 +34,7 @@ export async function submitDirection(formData: FormData) {
     { upsert: true, setDefaultsOnInsert: true }
   );
 
-  revalidatePath("/duelos");
+  revalidatePath("/pronosticos");
 }
 
 export async function submitExactScore(formData: FormData) {
@@ -69,12 +66,12 @@ export async function submitExactScore(formData: FormData) {
     { upsert: true, setDefaultsOnInsert: true }
   );
 
-  revalidatePath("/duelos");
+  revalidatePath("/pronosticos");
 }
 
 export async function runSyncNow() {
   await syncAllCompetitions();
-  revalidatePath("/duelos");
+  revalidatePath("/pronosticos");
 }
 
 export async function finishMockMatch(formData: FormData) {
@@ -84,7 +81,15 @@ export async function finishMockMatch(formData: FormData) {
 
   setMockResult(externalId, homeScore, awayScore);
   await syncAllCompetitions();
-  revalidatePath("/duelos");
+  revalidatePath("/pronosticos");
+}
+
+export async function postponeMockMatch(formData: FormData) {
+  const externalId = Number(formData.get("externalId"));
+
+  postponeMockFixture(externalId);
+  await syncAllCompetitions();
+  revalidatePath("/pronosticos");
 }
 
 export async function resetMockMatch(formData: FormData) {
@@ -97,5 +102,5 @@ export async function resetMockMatch(formData: FormData) {
   await connectToDatabase();
   await PredictionModel.deleteMany({ matchId });
 
-  revalidatePath("/duelos");
+  revalidatePath("/pronosticos");
 }

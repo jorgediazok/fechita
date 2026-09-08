@@ -16,21 +16,21 @@ export default async function GruposPage() {
   return (
     <PhoneFrame nav={<BottomNav active="grupos" />}>
         <div
-          className="px-6 pt-5 pb-8"
+          className="px-6 pt-5 pb-12"
           style={{
             background: "linear-gradient(150deg, #6845E0 0%, #9B5CFF 55%, #FF4FC3 100%)",
             clipPath: "polygon(0 0, 100% 0, 100% 90%, 0 100%)",
           }}
         >
-          <div className="flex items-center justify-center text-[#0B0C16]">
+          <div className="flex items-center justify-center text-white">
             <div className="font-display text-lg">MIS GRUPOS</div>
           </div>
-          <p className="mt-2 text-center text-[11px] font-extrabold text-[#0B0C16]/60">
+          <p className="mt-2 text-center text-[11px] font-extrabold text-white/70">
             Compartí un código con amigos y compitan aparte
           </p>
         </div>
 
-        <div className="flex flex-col gap-2.5 px-4.5 pt-4">
+        <div className="flex flex-col gap-2.5 px-4.5 pt-5">
           {myGroups.length === 0 && (
             <p className="px-1 text-xs font-bold text-[#6B6F94]">
               Todavía no estás en ningún grupo. Creá uno o unite con un código.

@@ -17,18 +17,18 @@ export default async function PerfilPage() {
   return (
     <PhoneFrame nav={<BottomNav active="perfil" />}>
         <div
-          className="px-6 pt-5 pb-8"
+          className="px-6 pt-5 pb-12"
           style={{
             background: "linear-gradient(150deg, #6845E0 0%, #9B5CFF 55%, #FF4FC3 100%)",
             clipPath: "polygon(0 0, 100% 0, 100% 90%, 0 100%)",
           }}
         >
-          <div className="flex items-center justify-center text-[#0B0C16]">
+          <div className="flex items-center justify-center text-white">
             <div className="font-display text-lg">PERFIL</div>
           </div>
         </div>
 
-        <div className="mx-4.5 -mt-3.5 flex flex-col items-center gap-3 rounded-2xl bg-[#15162A] px-4 py-6 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
+        <div className="mx-4.5 mt-4 flex flex-col items-center gap-3 rounded-2xl bg-[#15162A] px-4 py-6 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
           <TeamBadge team={team} size={64} />
           <div className="text-center">
             <div className="font-display text-lg text-[#E4E6F7]">{user.name}</div>

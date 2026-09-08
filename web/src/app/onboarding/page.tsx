@@ -10,7 +10,7 @@ type LeanTeam = { _id: string; name: string; shortName: string; logoUrl: string 
 export default async function OnboardingPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.favoriteTeamId) redirect("/duelos");
+  if (user.favoriteTeamId) redirect("/pronosticos");
 
   await connectToDatabase();
   const teams = (await TeamModel.find({}).sort({ name: 1 }).lean()) as unknown as LeanTeam[];

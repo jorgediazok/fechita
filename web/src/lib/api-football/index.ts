@@ -9,4 +9,4 @@ export function getFixtureProvider(): FixtureProvider {
 export type { FixtureProvider } from "./provider";
 export type { ApiFixture } from "./types";
 export { mapApiStatus } from "./statusMap";
-export { setMockResult, resetMockFixture } from "./mockProvider";
+export { setMockResult, resetMockFixture, postponeMockFixture } from "./mockProvider";

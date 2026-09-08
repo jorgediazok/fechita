@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Prode de fútbol argentino: pronósticos, ligas semanales y rivalidad entre amigos.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0b1220",
-    theme_color: "#75aadb",
+    background_color: "#0B0C16",
+    theme_color: "#0B0C16",
     lang: "es-AR",
     icons: [
       {

@@ -60,16 +60,16 @@ export default async function LigaPage() {
   return (
     <PhoneFrame nav={<BottomNav active="liga" />}>
       <div
-        className="px-6 pt-5 pb-8"
+        className="px-6 pt-5 pb-12"
         style={{
           background: "linear-gradient(150deg, #6845E0 0%, #9B5CFF 55%, #FF4FC3 100%)",
           clipPath: "polygon(0 0, 100% 0, 100% 86%, 0 100%)",
         }}
       >
-        <div className="flex items-center justify-between text-[#0B0C16]">
-          <Link href="/duelos">
+        <div className="flex items-center justify-between text-white">
+          <Link href="/pronosticos">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18l-6-6 6-6" stroke="#0B0C16" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M15 18l-6-6 6-6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
           <div className="font-display text-lg">LIGA SEMANAL</div>
@@ -94,7 +94,7 @@ export default async function LigaPage() {
                     />
                   </svg>
                 </div>
-                <div className={`font-display text-[9px] ${active ? "text-[#0B0C16]" : "text-[#0B0C16]/45"}`}>
+                <div className={`font-display text-[9px] ${active ? "text-white" : "text-white/45"}`}>
                   {TIER_LABELS[t]}
                 </div>
               </div>
@@ -103,7 +103,7 @@ export default async function LigaPage() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-5.5 -mt-3.5 flex items-center justify-between rounded-2xl bg-[#15162A] px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
+      <div className="relative z-10 mx-5.5 mt-4 flex items-center justify-between rounded-2xl bg-[#15162A] px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
         <div className="font-display text-lg text-[#7C5CFF]">{TIER_FULL_NAMES[tier].toUpperCase()}</div>
         <div className="text-[11px] font-extrabold text-[#9195C2]">{daysFormatter(group.closesAt)}</div>
       </div>

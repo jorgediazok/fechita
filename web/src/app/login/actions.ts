@@ -4,7 +4,7 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 
 export async function loginWithGoogle() {
-  await signIn("google", { redirectTo: "/duelos" });
+  await signIn("google", { redirectTo: "/pronosticos" });
 }
 
 export async function loginWithCredentials(formData: FormData) {
@@ -12,7 +12,7 @@ export async function loginWithCredentials(formData: FormData) {
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/duelos",
+      redirectTo: "/pronosticos",
     });
   } catch (error) {
     if (error instanceof AuthError) {

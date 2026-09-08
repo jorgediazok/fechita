@@ -16,5 +16,5 @@ export async function setFavoriteTeam(formData: FormData) {
   user.favoriteTeamId = new mongoose.Types.ObjectId(clubId);
   await user.save();
 
-  redirect("/duelos");
+  redirect("/pronosticos");
 }

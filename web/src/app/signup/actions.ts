@@ -31,7 +31,7 @@ export async function signupAction(formData: FormData) {
   await UserModel.create({ name, email, passwordHash, favoriteTeamId: clubId });
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/duelos" });
+    await signIn("credentials", { email, password, redirectTo: "/pronosticos" });
   } catch (error) {
     if (error instanceof AuthError) {
       throw new Error("La cuenta se creó pero no se pudo iniciar sesión, entrá desde /login");
