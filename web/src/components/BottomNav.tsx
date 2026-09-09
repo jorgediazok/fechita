@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type NavKey = "pronosticos" | "liga" | "grupos" | "perfil";
+export type NavKey = "pronosticos" | "liga" | "grupos" | "perfil";
 
 const ITEMS: { key: NavKey; href: string; label: string; icon: React.ReactNode }[] = [
   {

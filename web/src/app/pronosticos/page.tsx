@@ -138,17 +138,21 @@ export default async function PronosticosPage({
     streak > 0 && predictedInRound < Math.min(3, currentRoundMatches.length);
 
   const ranked = await getGroupStanding(group._id);
-  const leaderboard = await Promise.all(
-    ranked.map(async (r) => {
-      const memberUser = await UserModel.findById(r.membership.userId).select("name isBot");
-      return {
-        id: String(r.membership.userId),
-        name: memberUser?.name ?? "?",
-        isBot: memberUser?.isBot ?? false,
-        total: r.points,
-      };
-    })
-  );
+  const memberUsers = (await UserModel.find({
+    _id: { $in: ranked.map((r) => r.membership.userId) },
+  })
+    .select("name isBot")
+    .lean()) as unknown as { _id: unknown; name: string; isBot?: boolean }[];
+  const memberById = new Map(memberUsers.map((u) => [String(u._id), u]));
+  const leaderboard = ranked.map((r) => {
+    const memberUser = memberById.get(String(r.membership.userId));
+    return {
+      id: String(r.membership.userId),
+      name: memberUser?.name ?? "?",
+      isBot: memberUser?.isBot ?? false,
+      total: r.points,
+    };
+  });
   const myIndex = leaderboard.findIndex((u) => u.id === String(user._id));
   const myRank = myIndex + 1;
   const totalPlayers = leaderboard.length;
