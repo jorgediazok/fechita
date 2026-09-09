@@ -31,9 +31,21 @@ Deliberadamente **no** se cubren ligas de otros países — ir angosto y profund
 
 ## Nombre de la app
 
-Todavía sin resolver. Se evaluaron y descartaron: "Cómo Van", "Cómo Salieron", "Quién Ganó", "Resultado Final", "Ganó o Perdió" (muy literales, suenan a categoría de sitio, no a marca), "La Fija", "Cantala", "La Posta", "Ojo Clínico" (rechazados sin razón específica), "Tribuna" (colisiona con marca real de medios deportivos, Tribuna.com edición Argentina). "La Cargada" (jerga argentina para la joda/burla que le hacés a alguien cuando le ganás algo) se exploró como la dirección más prometedora y se descartó 2026-09-08 — a Jorge no le gusta.
+Todavía sin resolver, y **es el camino crítico para deployar** (bloquea dominio, OAuth de Google, metadata, nombre del repo/paquete). Jorge no quiere tomar una URL que después no va a usar.
 
-**"Cómo Van" se usa acá solo como placeholder de trabajo** para poder nombrar el repo y avanzar con la arquitectura sin bloquearse en branding.
+**Descartados:**
+- Literales (suenan a categoría de sitio, no a marca): "Cómo Van", "Cómo Salieron", "Quién Ganó", "Resultado Final", "Ganó o Perdió", "Buen Resultado".
+- Sin razón específica: "La Fija", "Cantala", "La Posta", "Ojo Clínico".
+- Colisión: "Tribuna" (marca de medios, Tribuna.com AR). "Prodecito" (ya hay una web).
+- "La Cargada" — se exploró como la más prometedora, descartada 2026-09-08 (no le gusta).
+- "Puntazo" — también significa navajazo en Argentina, no va para una app social.
+- Familia "prode + X" — genérica, es lo que hace GameOn; el diferencial es NO ser un prode genérico.
+
+**Criterio que quedó (2026-09-08):** palabra real con doble sentido futbolero, evocativa antes que descriptiva, con un guiño a que es un prode sin decirlo literal.
+
+**Shortlist en juego (ninguna confirmada):** Tablón (sector de la hinchada + tabla de posiciones), Racha, Revancha, Maestro, Data ("tengo data para este partido"), Ojímetro ("a ojímetro" = al cálculo). Verificar dominio + colisiones de la que se elija.
+
+**"Cómo Van" se usa acá solo como placeholder de trabajo** para nombrar el repo y avanzar con la arquitectura sin bloquearse en branding.
 
 ## Mecánicas de juego
 
@@ -207,7 +219,7 @@ Arrancar con las capas 1+2 nomás (sincronizar partidos + cargar pronósticos + 
 Estado hoy (2026-09-08): NextAuth v5, Google OAuth + email/contraseña (bcrypt, mínimo 6 caracteres), sesión JWT sin adapter. Anda para desarrollo y para validar, pero es rudimentario. **No difundir la URL / no promocionar hasta cerrar esto:**
 
 - **Sin verificación de email**: cualquiera se registra con un mail que no es suyo.
-- **Sin rate limiting ni captcha**: un script puede crear miles de cuentas. El daño real no es la DB (miles de usuarios son KB) sino que `enrollUserForCurrentWeek` mete cada registro en un grupo de Primera D → decenas de grupos basura con cuentas que no juegan, y los usuarios reales de la D compiten contra fantasmas con el ascenso/descenso deformado. Además cada signup corre un bcrypt (~100ms CPU) → una ráfaga spikea el server / dispara la factura de Vercel.
+- **Sin rate limiting ni captcha**: un script puede crear miles de cuentas. El daño real no es la DB (miles de usuarios son KB) sino que `enrollUserForCurrentRound` mete cada registro en un grupo de Primera D → decenas de grupos basura con cuentas que no juegan, y los usuarios reales de la D compiten contra fantasmas con el ascenso/descenso deformado. Además cada signup corre un bcrypt (~100ms CPU) → una ráfaga spikea el server / dispara la factura de Vercel.
 - **Sin "olvidé mi contraseña"**.
 
 Plan en dos niveles:
