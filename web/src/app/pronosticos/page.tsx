@@ -9,8 +9,21 @@ import { isPast, isWithinDays, isWithinPastDays } from "@/lib/time";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
-import { submitExactScore, runSyncNow, finishMockMatch, resetMockMatch, postponeMockMatch } from "./actions";
+import {
+  submitExactScore,
+  runSyncNow,
+  finishMockMatch,
+  resetMockMatch,
+  postponeMockMatch,
+  dismissBadges,
+  dismissStreak,
+} from "./actions";
 import { DirectionPicker } from "./DirectionPicker";
+import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
+import { StreakCelebration } from "@/components/StreakCelebration";
+import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
+import { currentRoundStreak } from "@/lib/badges/award";
+import { getPendingStreak } from "@/lib/profile";
 import { CompetitionTabs } from "./CompetitionTabs";
 import { isMockMode as runningInMockMode, isReplayMode } from "@/lib/api-football/source";
 import {
@@ -64,10 +77,21 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Buenos_Aires",
 });
 
-export default async function PronosticosPage() {
+export default async function PronosticosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ festejoRacha?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
+
+  // Preview dev (mock): forzar el festejo de racha desde la URL para poder verlo sin cerrar
+  // una fecha. Ej: /pronosticos?festejoRacha=4
+  const previewStreak =
+    isMockMode && Number((await searchParams).festejoRacha) > 0
+      ? Number((await searchParams).festejoRacha)
+      : null;
 
   await connectToDatabase();
 
@@ -88,6 +112,32 @@ export default async function PronosticosPage() {
   // docs/product-design.md: un ranking de todo el país desmotiva más de lo que engancha).
   const { group } = await getOrCreateActiveMembership(user._id);
   const tier = group.tier as TierCode;
+
+  // Recalcular insignias al entrar (además de en el sync y el cierre de fecha) garantiza
+  // que el festejo aparezca sí o sí la próxima vez que el usuario abre la app.
+  await evaluateBadgesForUser(user._id);
+  const unseenBadges = (await getUnseenBadges(user._id)).map((b) => ({
+    id: b.id,
+    name: b.name,
+    rarity: b.rarity,
+    flavor: b.flavor,
+    criterio: b.criterio,
+  }));
+
+  // Racha de fechas (misma que las insignias de fuego). El festejo de racha cede el paso al
+  // de insignias — si hay una insignia sin ver, esta se muestra después.
+  const streak = await currentRoundStreak(user._id);
+  const pendingStreak = unseenBadges.length === 0 ? await getPendingStreak(user._id) : null;
+
+  // "En juego": tenés racha pero todavía no cargaste los 3 pronósticos mínimos de la fecha
+  // en curso que hacen falta para que cuente (STREAK_MIN_PREDICTIONS en lib/badges/award).
+  const currentRoundMatches = matches.filter((m) => m.round === group.roundKey);
+  const predictedInRound = currentRoundMatches.filter((m) =>
+    predictionByMatch.has(String(m._id))
+  ).length;
+  const streakAtRisk =
+    streak > 0 && predictedInRound < Math.min(3, currentRoundMatches.length);
+
   const ranked = await getGroupStanding(group._id);
   const leaderboard = await Promise.all(
     ranked.map(async (r) => {
@@ -143,7 +193,18 @@ export default async function PronosticosPage() {
   });
 
   return (
-    <PhoneFrame nav={<BottomNav active="pronosticos" />}>
+    <PhoneFrame
+      nav={<BottomNav active="pronosticos" />}
+      overlay={
+        previewStreak ? (
+          <StreakCelebration streak={previewStreak} action={dismissStreak} />
+        ) : unseenBadges.length > 0 ? (
+          <BadgeUnlockOverlay badges={unseenBadges} action={dismissBadges} />
+        ) : pendingStreak ? (
+          <StreakCelebration streak={pendingStreak.streak} action={dismissStreak} />
+        ) : null
+      }
+    >
       <h1 className="sr-only">Pronósticos de la fecha y tu posición en la liga</h1>
       {/* hero */}
       <div
@@ -165,10 +226,29 @@ export default async function PronosticosPage() {
             <span className="text-[11px] font-extrabold tracking-wide">
               {user.name.toUpperCase()} · {totalPoints} PTS
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/10">
-              <svg width="16" height="16" viewBox="0 -960 960 960" fill="#F5F5FF" aria-hidden="true">
-                <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm200-500 54-18 16-54q-32-48-77-82.5T574-786l-54 38v56l160 112Zm-400 0 160-112v-56l-54-38q-54 17-99 51.5T210-652l16 54 54 18Zm-42 308 46-4 30-54-58-174-56-20-40 30q0 65 18 118.5T238-272Zm293 108q25-4 49-12l28-60-26-44H378l-26 44 28 60q24 8 49 12t51 4q26 0 51-4ZM390-360h180l56-160-146-102-144 102 54 160Zm332 88q42-50 60-103.5T800-494l-40-28-56 18-58 174 30 54 46 4Z" />
+            <div
+              className="flex items-center gap-1 rounded-full py-1 pl-1.5 pr-2.5"
+              style={{
+                background: streakAtRisk
+                  ? "rgba(255,255,255,0.14)"
+                  : streak > 0
+                    ? "rgba(255,122,61,0.28)"
+                    : "rgba(255,255,255,0.10)",
+              }}
+              aria-label={
+                streak > 0
+                  ? `Racha de ${streak} fecha${streak === 1 ? "" : "s"}${streakAtRisk ? ", en juego" : ""}`
+                  : "Sin racha"
+              }
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 2c1.1 3.1-1.6 4.7-1.6 7.4 0 1.4 1 2.3 1 2.3s2.7-2.1 2.2-4.8c2.1 2.1 3.7 4.8 3.7 7.8A5.3 5.3 0 0 1 6.7 15C6.7 10.3 11 8.1 12 2z"
+                  fill={streak > 0 && !streakAtRisk ? "#FF9D5C" : "#F5F5FF"}
+                  fillOpacity={streak > 0 ? 1 : 0.5}
+                />
               </svg>
+              <span className="font-display text-[13px] leading-none">{streak}</span>
             </div>
           </div>
 
@@ -224,6 +304,22 @@ export default async function PronosticosPage() {
         </div>
       </div>
 
+      {/* racha en juego: nudge para volver y no cortarla */}
+      {streakAtRisk && (
+        <div className="mx-4.5 mt-3 flex items-center gap-2.5 rounded-2xl border border-[#FF7A3D]/40 bg-[#211308] px-3.5 py-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+            <path
+              d="M12 2c1.1 3.1-1.6 4.7-1.6 7.4 0 1.4 1 2.3 1 2.3s2.7-2.1 2.2-4.8c2.1 2.1 3.7 4.8 3.7 7.8A5.3 5.3 0 0 1 6.7 15C6.7 10.3 11 8.1 12 2z"
+              fill="#FF9D5C"
+            />
+          </svg>
+          <p className="text-[12px] font-bold leading-snug text-[#FFCBA6]">
+            Tu racha de {streak} {streak === 1 ? "fecha" : "fechas"} está en juego — cargá tus
+            pronósticos de esta fecha para no cortarla.
+          </p>
+        </div>
+      )}
+
       {/* tu lugar en la tabla — sin sentido si nadie sumó todavía */}
       {totalPoints > 0 && nearby.length > 1 && (
         <div className="px-4.5 pt-3.5 pb-1">
@@ -274,11 +370,19 @@ export default async function PronosticosPage() {
       {isMockMode && (
         <div className="mx-4.5 my-3.5 rounded-2xl border border-dashed border-[#7C5CFF]/50 p-3.5 text-sm">
           <p className="mb-2 font-bold text-[#B9BCDA]">Panel dev (datos simulados de API-Football)</p>
-          <form action={runSyncNow}>
-            <button type="submit" className="rounded-xl bg-[#1F2038] px-3 py-1.5 text-xs font-bold text-[#9195C2]">
-              Sincronizar partidos ahora
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <form action={runSyncNow}>
+              <button type="submit" className="rounded-xl bg-[#1F2038] px-3 py-1.5 text-xs font-bold text-[#9195C2]">
+                Sincronizar partidos ahora
+              </button>
+            </form>
+            <a
+              href="/pronosticos?festejoRacha=4"
+              className="rounded-xl bg-[#1F2038] px-3 py-1.5 text-xs font-bold text-[#FF9D5C]"
+            >
+              Probar festejo de racha
+            </a>
+          </div>
         </div>
       )}
 

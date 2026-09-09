@@ -13,6 +13,10 @@ const LeagueMembershipSchema = new Schema({
   // Si ya se le mostró al usuario el anuncio de ascenso/descenso de este resultado
   // (ver getPendingLeagueResult en lib/leagues.ts) — evita repetirlo en cada visita.
   resultAcknowledged: { type: Boolean, default: false },
+  // Racha de fechas del usuario justo después de cerrar esta (fechas seguidas acertando
+  // +50%). Snapshot para poder festejar cuando crece — ver getPendingStreak en lib/profile.
+  streakAfter: { type: Number, default: null },
+  streakSeen: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
