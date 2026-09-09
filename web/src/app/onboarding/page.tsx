@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { connectToDatabase } from "@/lib/db";
 import TeamModel from "@/models/Team";
+import Link from "next/link";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { ClubPicker } from "@/components/ClubPicker";
 import { setFavoriteTeam } from "./actions";
@@ -51,6 +52,13 @@ export default async function OnboardingPage() {
         >
           ARRANCAR
         </button>
+
+        <Link
+          href="/reglas"
+          className="-mt-2 text-center text-[12px] font-bold text-[#9195C2] underline"
+        >
+          ¿Cómo se juega?
+        </Link>
       </form>
     </PhoneFrame>
   );

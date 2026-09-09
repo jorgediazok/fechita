@@ -11,6 +11,8 @@ import { syncAllCompetitions } from "@/lib/sync";
 import { runBots } from "@/lib/bots";
 import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/api-football";
 import { isPast } from "@/lib/time";
+import { markBadgesSeen } from "@/lib/badges";
+import { markStreakSeen } from "@/lib/profile";
 
 export async function submitDirection(matchId: string, direction: string) {
   const user = await getCurrentUser();
@@ -74,6 +76,26 @@ export async function runSyncNow() {
   await syncAllCompetitions();
   await runBots();
   revalidatePath("/pronosticos");
+}
+
+// Marca como vistas las insignias recién ganadas — cierra el festejo de /pronosticos. Marca
+// también la racha vista: si una insignia de fuego (3/5/8) tapó al festejo de racha, no
+// queremos que salte enseguida después.
+export async function dismissBadges() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  await markBadgesSeen(user._id);
+  await markStreakSeen(user._id);
+  revalidatePath("/pronosticos");
+}
+
+// Cierra el festejo de racha. Redirige (en vez de revalidar) para soltar el ?festejoRacha
+// del preview dev y volver a la pantalla limpia.
+export async function dismissStreak() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  await markStreakSeen(user._id);
+  redirect("/pronosticos");
 }
 
 export async function finishMockMatch(formData: FormData) {

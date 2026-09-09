@@ -227,7 +227,18 @@ export default async function LigaPage() {
             </svg>
           </Link>
           <h1 className="font-display text-lg">LIGA</h1>
-          <div className="w-5" />
+          <Link href="/reglas" aria-label="Cómo se juega" className="rounded-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="#FFFFFF" strokeWidth="2" />
+              <path
+                d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.4 1.1-1.4 2v.3"
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <circle cx="11.7" cy="17" r="1.2" fill="#FFFFFF" />
+            </svg>
+          </Link>
         </div>
 
         <div className="mt-3.5 flex items-end justify-between px-1">

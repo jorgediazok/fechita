@@ -3,6 +3,7 @@ import { getFixtureProvider, mapApiStatus, type ApiFixture } from "./api-footbal
 import type { FetchWindow } from "./api-football/provider";
 import { COMPETITIONS, type CompetitionSeed } from "./competitions";
 import { calculatePoints } from "./points";
+import { evaluateBadgesForUsers } from "./badges/award";
 import CompetitionModel from "@/models/Competition";
 import TeamModel from "@/models/Team";
 import MatchModel from "@/models/Match";
@@ -46,6 +47,7 @@ export async function syncCompetition(
 
   let matchesUpserted = 0;
   let predictionsScored = 0;
+  const scoredUserIds = new Set<string>();
 
   for (const fixture of fixtures) {
     const [homeTeam, awayTeam] = await Promise.all([
@@ -85,6 +87,7 @@ export async function syncCompetition(
           { homeScore: match.homeScore, awayScore: match.awayScore }
         );
         await prediction.save();
+        scoredUserIds.add(String(prediction.userId));
         predictionsScored += 1;
       }
     } else if (status === "cancelled") {
@@ -95,6 +98,13 @@ export async function syncCompetition(
       );
       predictionsScored += result.modifiedCount;
     }
+  }
+
+  // Insignias que se puedan haber ganado con los puntos recién liquidados (aciertos
+  // acumulados, rachas, resultado exacto, superclásico, sorpresa). Tolerante a fallos —
+  // no debe romper el sync. Los bots se filtran adentro.
+  if (scoredUserIds.size > 0) {
+    await evaluateBadgesForUsers([...scoredUserIds]);
   }
 
   return { competition: competition.slug, matchesUpserted, predictionsScored };

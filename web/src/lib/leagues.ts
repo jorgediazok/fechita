@@ -5,6 +5,7 @@ import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserModel from "@/models/User";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
+import { evaluateBadgesForUsers, currentRoundStreak } from "./badges/award";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -147,15 +148,26 @@ async function closeGroup(group: InstanceType<typeof RoundLeagueGroupModel>) {
       result = "relegated";
     }
 
+    const user = await UserModel.findById(membership.userId);
+
     membership.points = points;
     membership.result = result;
     membership.wonRound = i === 0 && ranked.length > 1;
+    // Racha ya con esta fecha contada, para festejar si creció (solo usuarios reales).
+    membership.streakAfter =
+      user && !user.isBot ? await currentRoundStreak(membership.userId) : null;
     await membership.save();
 
-    const user = await UserModel.findById(membership.userId);
     if (!user) continue;
-    if (result === "promoted") user.currentTier = nextTierUp(group.tier as TierCode);
-    else if (result === "relegated") user.currentTier = nextTierDown(group.tier as TierCode);
+    if (result === "promoted") {
+      const up = nextTierUp(group.tier as TierCode);
+      user.currentTier = up;
+      if (TIER_ORDER.indexOf(up) > TIER_ORDER.indexOf((user.bestTier ?? "D") as TierCode)) {
+        user.bestTier = up;
+      }
+    } else if (result === "relegated") {
+      user.currentTier = nextTierDown(group.tier as TierCode);
+    }
     await user.save();
   }
 
@@ -187,6 +199,12 @@ export async function closeExpiredGroups() {
   // actualizado) — sin esto, dos que ascienden juntos no se cruzan hasta que ambos recargan.
   for (const userId of affected) {
     await enrollUserForCurrentRound(userId);
+  }
+
+  // Insignias de ascenso y "ganador de la fecha" — recién acá quedan firmes el tier nuevo
+  // y el LeagueMembership.wonRound. Tolerante a fallos, bots filtrados adentro.
+  if (affected.size > 0) {
+    await evaluateBadgesForUsers([...affected]);
   }
 }
 

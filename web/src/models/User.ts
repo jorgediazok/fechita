@@ -12,6 +12,9 @@ const UserSchema = new Schema({
   // Categoría de la liga (capa 3). Persiste entre fechas aunque las
   // ligas en sí se resetean — ver docs/product-design.md.
   currentTier: { type: String, enum: TIER_ORDER, default: "D" },
+  // La categoría más alta que el usuario alcanzó alguna vez ("tu techo", visible en el
+  // perfil). Se actualiza al ascender y nunca baja. Arranca en "D" como currentTier.
+  bestTier: { type: String, enum: TIER_ORDER, default: "D" },
   // Usuario "bot" para dar vida a las ligas mientras haya pocos jugadores reales:
   // pronostica solo antes de cada kickoff (ver src/lib/bots/) y asciende/desciende
   // como cualquiera. botSkill (0..1) regula qué tan seguido le pega — solo en bots.
