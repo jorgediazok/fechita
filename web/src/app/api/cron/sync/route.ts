@@ -5,38 +5,55 @@ import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import DevStateModel from "@/models/DevState";
 import { getFixtureSource } from "@/lib/api-football";
+import type { FetchWindow } from "@/lib/api-football/provider";
 
-const HOUR = 3_600_000;
+const MIN = 60_000;
+const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;
 
-// El cron de Vercel se dispara seguido (cada 3h), pero pegarle a la fuente de partidos solo
-// tiene sentido cuando hay algo para traer. En Argentina se juega vie-lun y después hay
-// varios días sin nada — esto evita gastar requests (y créditos, en The Odds API) al pedo.
-async function shouldSync(): Promise<{ sync: boolean; reason: string }> {
+// El cron externo (cron-job.org / GitHub Actions / Cloudflare) dispara este endpoint cada
+// 2-3 min. Pegarle a la fuente de partidos solo tiene sentido cuando hay algo que traer, así
+// que acá se decide qué hacer:
+//
+//  - "recent": hay un partido que arrancó hace 85-240 min y todavía no tenemos su resultado.
+//    Es la ventana en la que el partido está terminando → poleo barato (1 crédito en The Odds
+//    API) en cada tick hasta que llega el score. Así el resultado aparece ~5-10 min del final.
+//  - "full": no hay partidos terminando pero se viene una fecha (partido dentro de 5 días) y
+//    hace >12h del último refresco → traer fixtures nuevos. ~2 veces por día.
+//  - "full" también como red de seguridad si hace >2 días que no se sincroniza.
+//  - Si no aplica nada (mar-jue sin partidos) → skip, 0 requests.
+async function decide(): Promise<{ window: FetchWindow | null; reason: string }> {
   await connectToDatabase();
   const now = Date.now();
   const state = await DevStateModel.findOne({ key: "singleton" });
   const sinceLast = state?.lastSyncAt ? now - new Date(state.lastSyncAt).getTime() : Infinity;
 
-  // Red de seguridad: sincronizar sí o sí si hace mucho que no.
-  if (sinceLast > 3 * DAY) return { sync: true, reason: "sin sincronizar hace >3 días" };
-
-  // Un partido ya arrancó y todavía no tenemos su resultado → traer scores.
-  const pendingResult = await MatchModel.exists({
+  const finishing = await MatchModel.exists({
     status: { $in: ["scheduled", "live"] },
-    kickoffAt: { $gte: new Date(now - 3 * DAY), $lte: new Date(now) },
+    kickoffAt: { $gte: new Date(now - 4 * HOUR), $lte: new Date(now - 85 * MIN) },
   });
-  if (pendingResult) return { sync: true, reason: "hay partidos jugados sin resultado" };
+  if (finishing) return { window: "recent", reason: "partido terminando, buscando resultado" };
 
-  // Se viene una fecha (partido dentro de 5 días) y los fixtures pueden haber cambiado.
-  if (sinceLast > 18 * HOUR) {
-    const upcoming = await MatchModel.exists({
-      kickoffAt: { $gte: new Date(now), $lte: new Date(now + 5 * DAY) },
+  // Un partido viejo sin resultado (se escapó de la ventana de arriba, o el cron estuvo caído):
+  // refresco completo, que trae los resultados de los últimos 3 días.
+  if (sinceLast > 2 * HOUR) {
+    const stale = await MatchModel.exists({
+      status: { $in: ["scheduled", "live"] },
+      kickoffAt: { $gte: new Date(now - 3 * DAY), $lte: new Date(now - 4 * HOUR) },
     });
-    if (upcoming) return { sync: true, reason: "fecha próxima, refrescar fixtures" };
+    if (stale) return { window: "full", reason: "resultado atrasado" };
   }
 
-  return { sync: false, reason: "sin partidos por jugar ni resultados pendientes" };
+  if (sinceLast > 2 * DAY) return { window: "full", reason: "sin sincronizar hace >2 días" };
+
+  if (sinceLast > 12 * HOUR) {
+    const fechaSoon = await MatchModel.exists({
+      kickoffAt: { $gte: new Date(now), $lte: new Date(now + 5 * DAY) },
+    });
+    if (fechaSoon) return { window: "full", reason: "fecha próxima, refrescar fixtures" };
+  }
+
+  return { window: null, reason: "nada por jugar ni resultados pendientes" };
 }
 
 export async function GET(request: NextRequest) {
@@ -48,20 +65,24 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // El modo mock/replay no cuesta nada y no depende de una ventana de partidos reales.
-  const alwaysSync = ["mock", "replay"].includes(getFixtureSource());
-  const { sync, reason } = alwaysSync ? { sync: true, reason: "modo local" } : await shouldSync();
+  // mock/replay no cuestan nada y no dependen de una ventana real de partidos.
+  const local = ["mock", "replay"].includes(getFixtureSource());
+  const { window, reason } = local
+    ? ({ window: "full", reason: "modo local" } as const)
+    : await decide();
 
-  if (!sync) {
+  if (!window) {
     return NextResponse.json({ ok: true, skipped: reason });
   }
 
-  const results = await syncAllCompetitions();
-  const bots = await runBots();
+  const results = await syncAllCompetitions(window);
+  // En "recent" (poleo de resultados) no aparecen partidos nuevos para que los bots
+  // pronostiquen — solo corren los bots en el refresco completo.
+  const bots = window === "full" ? await runBots() : null;
   await DevStateModel.updateOne(
     { key: "singleton" },
     { $set: { lastSyncAt: new Date() }, $setOnInsert: { key: "singleton" } },
     { upsert: true }
   );
-  return NextResponse.json({ ok: true, reason, results, bots });
+  return NextResponse.json({ ok: true, window, reason, results, bots });
 }

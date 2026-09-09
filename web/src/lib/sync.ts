@@ -1,5 +1,6 @@
 import { connectToDatabase } from "./db";
 import { getFixtureProvider, mapApiStatus, type ApiFixture } from "./api-football";
+import type { FetchWindow } from "./api-football/provider";
 import { COMPETITIONS, type CompetitionSeed } from "./competitions";
 import { calculatePoints } from "./points";
 import CompetitionModel from "@/models/Competition";
@@ -28,7 +29,10 @@ export type SyncResult = {
   predictionsScored: number;
 };
 
-export async function syncCompetition(seed: CompetitionSeed): Promise<SyncResult> {
+export async function syncCompetition(
+  seed: CompetitionSeed,
+  window: FetchWindow = "full"
+): Promise<SyncResult> {
   await connectToDatabase();
 
   const competition = await CompetitionModel.findOneAndUpdate(
@@ -38,7 +42,7 @@ export async function syncCompetition(seed: CompetitionSeed): Promise<SyncResult
   );
 
   const provider = getFixtureProvider();
-  const fixtures = await provider.getFixtures(seed);
+  const fixtures = await provider.getFixtures(seed, window);
 
   let matchesUpserted = 0;
   let predictionsScored = 0;
@@ -96,10 +100,10 @@ export async function syncCompetition(seed: CompetitionSeed): Promise<SyncResult
   return { competition: competition.slug, matchesUpserted, predictionsScored };
 }
 
-export async function syncAllCompetitions(): Promise<SyncResult[]> {
+export async function syncAllCompetitions(window: FetchWindow = "full"): Promise<SyncResult[]> {
   const results: SyncResult[] = [];
   for (const seed of COMPETITIONS) {
-    results.push(await syncCompetition(seed));
+    results.push(await syncCompetition(seed, window));
   }
   return results;
 }

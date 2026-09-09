@@ -117,11 +117,14 @@ function assignRounds(events: OddsEvent[], seed: CompetitionSeed): Map<string, s
 }
 
 export const theoddsapiFixtureProvider: FixtureProvider = {
-  async getFixtures(seed) {
+  async getFixtures(seed, window = "full") {
     const apiKey = process.env.THE_ODDS_API_KEY;
     if (!apiKey) throw new Error("Falta THE_ODDS_API_KEY para usar FIXTURE_SOURCE=theoddsapi");
 
-    const url = `${BASE_URL}/scores/?apiKey=${apiKey}&daysFrom=3&dateFormat=iso`;
+    // `daysFrom` cuesta 1 crédito extra (2 en vez de 1). En modo "recent" (poleo para agarrar
+    // un resultado recién terminado) no hace falta: el partido está en la respuesta igual.
+    const daysFromParam = window === "full" ? "&daysFrom=3" : "";
+    const url = `${BASE_URL}/scores/?apiKey=${apiKey}${daysFromParam}&dateFormat=iso`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       throw new Error(`The Odds API respondió ${res.status}: ${(await res.text()).slice(0, 200)}`);
