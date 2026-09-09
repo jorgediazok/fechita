@@ -182,8 +182,8 @@ Perfil, no credenciales — auth manejado aparte (ej. NextAuth).
   updatedAt: Date,
 }
 ```
-- Índice único compuesto `(userId, matchId)` — un pronóstico por usuario por partido, se actualiza (no se duplica) mientras el partido no arrancó.
-- Regla de negocio (no de esquema): rechazar cualquier escritura/edición si `Date.now() >= match.kickoffAt`.
+- Índice único compuesto `(userId, matchId)` — un pronóstico por usuario por partido, se actualiza (no se duplica) mientras la carga esté abierta.
+- Regla de negocio (no de esquema): la carga de cada partido **cierra 1 hora antes del kickoff**, no al kickoff. `isPredictionLocked()` / `PREDICTION_LOCK_LEAD_MS` en `web/src/lib/time.ts` — puro cálculo de tiempo contra `Match.kickoffAt`, nunca llama a la API. Lo aplican las server actions de `pronosticos/actions.ts` (autoridad, reloj del server) y `MatchPredictor.tsx` en el cliente (deshabilita la UI con un timer al llegar la hora límite, aunque la pestaña quede abierta).
 
 ### Cálculo de puntos
 ```ts

@@ -10,7 +10,7 @@ import { getCurrentUser } from "@/lib/session";
 import { syncAllCompetitions } from "@/lib/sync";
 import { runBots } from "@/lib/bots";
 import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/api-football";
-import { isPast } from "@/lib/time";
+import { isPredictionLocked } from "@/lib/time";
 import { markBadgesSeen } from "@/lib/badges";
 import { markStreakSeen } from "@/lib/profile";
 
@@ -27,8 +27,8 @@ export async function submitDirection(matchId: string, direction: string) {
   if (!match) {
     throw new Error("Partido no encontrado");
   }
-  if (isPast(match.kickoffAt)) {
-    throw new Error("Ya arrancó el partido, no se puede cargar o editar el pronóstico");
+  if (isPredictionLocked(match.kickoffAt)) {
+    throw new Error("La carga cerró: se cierra 1 hora antes del partido");
   }
 
   await PredictionModel.findOneAndUpdate(
@@ -40,13 +40,9 @@ export async function submitDirection(matchId: string, direction: string) {
   revalidatePath("/pronosticos");
 }
 
-export async function submitExactScore(formData: FormData) {
+export async function submitExactScore(matchId: string, homeScore: number, awayScore: number) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-
-  const matchId = String(formData.get("matchId"));
-  const homeScore = Number(formData.get("homeScore"));
-  const awayScore = Number(formData.get("awayScore"));
 
   if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
     throw new Error("Los goles tienen que ser números enteros positivos");
@@ -57,8 +53,8 @@ export async function submitExactScore(formData: FormData) {
   if (!match) {
     throw new Error("Partido no encontrado");
   }
-  if (isPast(match.kickoffAt)) {
-    throw new Error("Ya arrancó el partido, no se puede cargar o editar el pronóstico");
+  if (isPredictionLocked(match.kickoffAt)) {
+    throw new Error("La carga cerró: se cierra 1 hora antes del partido");
   }
 
   const direction = homeScore > awayScore ? "home" : homeScore < awayScore ? "away" : "draw";
@@ -67,6 +63,28 @@ export async function submitExactScore(formData: FormData) {
     { userId: user._id, matchId: match._id },
     { predictedDirection: direction, predictedHomeScore: homeScore, predictedAwayScore: awayScore, updatedAt: new Date() },
     { upsert: true, setDefaultsOnInsert: true }
+  );
+
+  revalidatePath("/pronosticos");
+}
+
+// Vuelve al pronóstico "solo dirección": borra el marcador exacto pero conserva la ficha 1-X-2.
+export async function clearExactScore(matchId: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  await connectToDatabase();
+  const match = await MatchModel.findById(matchId);
+  if (!match) {
+    throw new Error("Partido no encontrado");
+  }
+  if (isPredictionLocked(match.kickoffAt)) {
+    throw new Error("La carga cerró: se cierra 1 hora antes del partido");
+  }
+
+  await PredictionModel.findOneAndUpdate(
+    { userId: user._id, matchId: match._id },
+    { $set: { predictedHomeScore: null, predictedAwayScore: null, updatedAt: new Date() } }
   );
 
   revalidatePath("/pronosticos");

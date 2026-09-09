@@ -123,8 +123,16 @@ Fuente de partidos ──sync──▶ Match / Team / Competition ◀── el u
 
 - **Cargar pronósticos** (`/pronosticos`): ficha **1-X-2** (la notación de las boletas de quiniela)
   — tocás la dirección del resultado. Quien se anima al resultado exacto (bonus +5) despliega un
-  mini marcador. `Prediction.predictedDirection` es siempre obligatorio;
+  mini marcador con steppers `−` / `+` (nada de inputs numéricos con flechitas). Al mover el
+  marcador la ficha 1-X-2 se recalcula en el acto sin esperar al servidor; el guardado va con
+  debounce. Todo en un solo client component, `app/pronosticos/MatchPredictor.tsx`.
+  `Prediction.predictedDirection` es siempre obligatorio;
   `predictedHomeScore`/`predictedAwayScore` son opcionales.
+- **Cierre de carga**: la carga de cada partido cierra **1 hora antes del kickoff** (no al kickoff).
+  Es puro cálculo de tiempo contra `Match.kickoffAt` (`isPredictionLocked()` /
+  `PREDICTION_LOCK_LEAD_MS` en `lib/time.ts`) — **nunca llama a la API**. Lo aplican las server
+  actions de `pronosticos/actions.ts` (autoridad, reloj del servidor) y el `MatchPredictor` en el
+  cliente con un timer que deshabilita la UI al llegar la hora, aunque la pestaña quede abierta.
 - **Puntos** (`lib/points.ts`): **5** si acierta el marcador exacto, **3** si acierta solo la
   dirección, **0** si no. Partido anulado del todo → 1 punto flat para quien ya había pronosticado.
 
