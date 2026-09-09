@@ -5,12 +5,11 @@ import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import UserModel from "@/models/User";
-import { isPast, isWithinDays, isWithinPastDays } from "@/lib/time";
+import { isWithinDays, isWithinPastDays } from "@/lib/time";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
 import {
-  submitExactScore,
   runSyncNow,
   finishMockMatch,
   resetMockMatch,
@@ -18,7 +17,7 @@ import {
   dismissBadges,
   dismissStreak,
 } from "./actions";
-import { DirectionPicker } from "./DirectionPicker";
+import { MatchPredictor } from "./MatchPredictor";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
 import { StreakCelebration } from "@/components/StreakCelebration";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
@@ -398,7 +397,6 @@ export default async function PronosticosPage({
 
             {roundMatches.map((match) => {
               const prediction = predictionByMatch.get(String(match._id));
-              const kickoffPassed = isPast(match.kickoffAt);
               const finished = match.status === "finished";
 
               if (finished) {
@@ -456,52 +454,15 @@ export default async function PronosticosPage({
                     <TeamBadge team={match.awayTeamId} />
                   </div>
 
-                  {kickoffPassed ? (
-                    <p className="text-xs font-bold text-[#8A8FB2]">Ya arrancó, carga cerrada.</p>
-                  ) : (
-                    <>
-                      <DirectionPicker
-                        matchId={String(match._id)}
-                        initialDirection={prediction?.predictedDirection ?? null}
-                      />
-
-                      <details className="group flex flex-col items-center">
-                        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#8A8FB2] [&::-webkit-details-marker]:hidden">
-                          ¿EXACTO? +5 PTS
-                          <svg
-                            className="transition-transform duration-200 group-open:rotate-180"
-                            width="9"
-                            height="9"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                          >
-                            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </summary>
-                        <form action={submitExactScore} className="mt-2.5 flex items-center justify-center gap-2 border-t border-dashed border-[#262844] pt-2.5">
-                          <input type="hidden" name="matchId" value={String(match._id)} />
-                          <input
-                            type="number"
-                            name="homeScore"
-                            min={0}
-                            defaultValue={prediction?.predictedHomeScore ?? undefined}
-                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF]"
-                          />
-                          <span className="font-display text-xs text-[#3A3D5C]">-</span>
-                          <input
-                            type="number"
-                            name="awayScore"
-                            min={0}
-                            defaultValue={prediction?.predictedAwayScore ?? undefined}
-                            className="h-[34px] w-[34px] rounded-[9px] bg-[#0B0C16] text-center font-display text-sm text-[#A390FF] shadow-[inset_0_0_0_1.5px_#7C5CFF]"
-                          />
-                          <button type="submit" className="ml-1.5 rounded-lg bg-[#1F2038] px-3 py-1.5 text-[11px] font-bold text-[#9195C2]">
-                            Guardar
-                          </button>
-                        </form>
-                      </details>
-                    </>
-                  )}
+                  <MatchPredictor
+                    matchId={String(match._id)}
+                    kickoffAt={new Date(match.kickoffAt).toISOString()}
+                    homeShortName={match.homeTeamId.shortName}
+                    awayShortName={match.awayTeamId.shortName}
+                    initialDirection={prediction?.predictedDirection ?? null}
+                    initialHome={prediction?.predictedHomeScore ?? null}
+                    initialAway={prediction?.predictedAwayScore ?? null}
+                  />
 
                   {isMockMode && !finished && (
                     <form action={finishMockMatch} className="flex items-center gap-2 border-t border-dashed border-[#262844] pt-2.5 text-[10px]">
