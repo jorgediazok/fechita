@@ -45,15 +45,14 @@ export default async function LigaPage() {
   const roundProgress = await getRoundProgress(group.roundKey);
 
   const ranked = await getGroupStanding(group._id);
-  const populated = await Promise.all(
-    ranked.map(async (r) => {
-      const memberUser = await UserModel.findById(r.membership.userId).populate(
-        "favoriteTeamId",
-        "name shortName logoUrl"
-      );
-      return { ...r, memberUser };
-    })
-  );
+  const memberUsers = await UserModel.find({
+    _id: { $in: ranked.map((r) => r.membership.userId) },
+  }).populate("favoriteTeamId", "name shortName logoUrl");
+  const memberById = new Map(memberUsers.map((u) => [String(u._id), u]));
+  const populated = ranked.map((r) => ({
+    ...r,
+    memberUser: memberById.get(String(r.membership.userId)) ?? null,
+  }));
 
   const size = zoneSize(populated.length);
   const canPromote = tierCanPromote(tier);
