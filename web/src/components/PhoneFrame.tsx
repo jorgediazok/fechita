@@ -1,3 +1,5 @@
+import { PushRegistrar } from "./PushClient";
+
 export function PhoneFrame({
   children,
   nav,
@@ -31,6 +33,7 @@ export function PhoneFrame({
           .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
           .no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
         `}</style>
+        <PushRegistrar />
         <main id="contenido" className="no-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>

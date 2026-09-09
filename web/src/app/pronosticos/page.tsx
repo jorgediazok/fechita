@@ -18,6 +18,7 @@ import {
   dismissStreak,
 } from "./actions";
 import { MatchPredictor } from "./MatchPredictor";
+import { PushNudge } from "@/components/PushClient";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
 import { StreakCelebration } from "@/components/StreakCelebration";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
@@ -322,6 +323,8 @@ export default async function PronosticosPage({
           </p>
         </div>
       )}
+
+      <PushNudge />
 
       {/* tu lugar en la tabla — sin sentido si nadie sumó todavía */}
       {totalPoints > 0 && nearby.length > 1 && (

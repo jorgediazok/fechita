@@ -6,6 +6,8 @@ import UserModel from "@/models/User";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import { evaluateBadgesForUsers, currentRoundStreak } from "./badges/award";
+import { sendToUser } from "./push/send";
+import { roundCloseMessage } from "./push/messages";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -169,6 +171,24 @@ async function closeGroup(group: InstanceType<typeof RoundLeagueGroupModel>) {
       user.currentTier = nextTierDown(group.tier as TierCode);
     }
     await user.save();
+
+    // T4 — push de cierre de fecha (ascenso / descenso / ganador). Solo usuarios reales;
+    // dedupeKey = groupId → una sola vez por grupo cerrado. roundCloseMessage devuelve null
+    // para "stayed" sin corona, y sendToUser nunca lanza.
+    if (!user.isBot) {
+      const msg = roundCloseMessage({
+        result,
+        wonRound: Boolean(membership.wonRound),
+        roundKey: group.roundKey,
+        newTier: (user.currentTier ?? "D") as TierCode,
+      });
+      if (msg) {
+        await sendToUser(String(user._id), msg, {
+          kind: "round-close",
+          dedupeKey: String(group._id),
+        });
+      }
+    }
   }
 
   group.status = "closed";
