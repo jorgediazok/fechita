@@ -59,6 +59,7 @@ como-van/
     │   │   ├── leagues.ts         # ligas por fecha: grupos, ascenso/descenso, ganador de la fecha
     │   │   ├── groups.ts          # grupos privados
     │   │   ├── bots/              # 20 usuarios bot que pronostican solos
+    │   │   ├── push/              # web push: claves VAPID, envío, dedupe, mensajes
     │   │   ├── points.ts          # cálculo 5 / 3 / 0
     │   │   ├── tiers.ts           # categorías D → C → B → NACIONAL → PRIMERA
     │   │   ├── competitions.ts    # qué competencias se sincronizan
@@ -81,6 +82,7 @@ docker compose up -d          # levanta mongo:7 en localhost:27017
 cd web
 npm install
 cp .env.example .env.local    # y completá las variables (ver abajo)
+npx web-push generate-vapid-keys   # opcional: pegá el par en .env.local para probar notificaciones
 
 # 3. Datos de prueba (modo mock: no necesita ninguna API key)
 #    con FIXTURE_SOURCE=mock, abrí /pronosticos y usá el panel dev para "Sincronizar
@@ -103,6 +105,9 @@ npm run dev                   # http://localhost:3000
 | `CRON_SECRET` | Secreto para autorizar `/api/cron/sync` | sí en prod |
 | `AUTH_SECRET` | Secreto de NextAuth (`openssl rand -base64 32`) | sí |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth Client ID de Google Cloud Console | solo para el botón de Google |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Par de claves web push (`npx web-push generate-vapid-keys`) | no (sin ellas las notificaciones quedan desactivadas) |
+| `VAPID_SUBJECT` | `mailto:` o URL de contacto para el push | con las VAPID keys |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Igual que `VAPID_PUBLIC_KEY` (la usa el cliente para suscribirse) | con las VAPID keys |
 | `NEXT_PUBLIC_SITE_URL` | URL pública (metadata OG, QR de la landing). En dev, la IP de LAN para probar el QR desde el celu | no (fallback a localhost) |
 
 ---
@@ -205,6 +210,32 @@ pronóstico, crea uno. La estrategia pesa el 1-X-2 por fuerza de equipo (`teamSt
 mezclado con azar según el skill. **RNG determinístico por `(botId, matchId)`** — un re-run nunca
 cambia una jugada hecha.
 
+### Notificaciones push (`lib/push/`, web push)
+
+Web push (VAPID) — sin dependencias de terceros salvo `web-push` para mandar. Service worker
+solo-push en `public/sw.js` (no cachea nada, el offline completo queda fuera de scope),
+registrado desde `PhoneFrame` vía `<PushRegistrar>`. Opt-in con un toggle en `/perfil`
+(`PushToggle`) más una tarjeta suave la primera vez en `/pronosticos` (`PushNudge`), ambos en
+`components/PushClient.tsx`. Una fila `PushSubscription` por dispositivo; el sender
+(`lib/push/send.ts`) borra las que devuelven 404/410. `NotificationLog` (índice único
+`userId+kind+dedupeKey`, TTL 60 días) es el anti-duplicados: antes de mandar una notificación
+de evento se inserta ahí y si rebota, ya se mandó.
+
+Sin las VAPID keys en el entorno, todo el subsistema queda inerte y la app funciona igual.
+**iOS**: web push solo anda con la PWA instalada en la pantalla de inicio (el toggle lo detecta).
+
+Disparadores (v1, todos reactivos):
+
+| # | Cuándo | Dónde se engancha |
+|---|---|---|
+| T2 | Terminó una fecha entera → "sumaste N pts" | `lib/push/notify.ts#notifyFinishedRounds`, llamado desde `syncCompetition` |
+| T3 | Insignia nueva | `evaluateBadgesForUser` (`lib/badges/award.ts`) |
+| T4 | Cerró tu grupo de la fecha → ascenso / descenso / ganador | `closeGroup` (`lib/leagues.ts`) |
+| T1 | Notificación de prueba (botón en el toggle) | `perfil/push-actions.ts#sendTestNotification` |
+
+Pendiente (T5, cuando el cron esté vivo): "faltan tus pronósticos, cierra en ~2h" — la
+costura ya está (`NotificationLog` + dedupe), falta el pase desde `/api/cron/sync`.
+
 ### Auth (`src/auth.ts`)
 
 NextAuth v5, sesión JWT **sin adapter de DB** (deliberado — el adapter manejaría su propia colección
@@ -234,6 +265,8 @@ usan `PhoneFrame` (columna angosta) a propósito — es un producto mobile. Acce
 | `RoundLeagueGroup` | grupo de liga de una fecha (`roundKey`, `tier`, `closesAt`, `status`) |
 | `LeagueMembership` | usuario en un grupo (`points` snapshot, `result`, `wonRound`) |
 | `Group` / `GroupMembership` | grupos privados de amigos |
+| `PushSubscription` | una suscripción web push por dispositivo (`endpoint` único) |
+| `NotificationLog` | anti-duplicados de push (`userId+kind+dedupeKey` único, TTL 60d) |
 | `DevState` | doc único: `lastSyncAt`, `replayStartedAt` |
 
 Los `externalId` de partidos y equipos son ids reales de API-Football, así que cambiar de fuente de
@@ -259,8 +292,10 @@ datos no requiere re-mapear.
 
 1. Importar `web/` como proyecto Vercel.
 2. Env vars en el dashboard: `MONGODB_URI` (Atlas), `FIXTURE_SOURCE=theoddsapi`, `THE_ODDS_API_KEY`,
-   `CRON_SECRET`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, y `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` si se
-   usa Google.
+   `CRON_SECRET`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` si se
+   usa Google, y `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+   para las notificaciones push (generá el par una vez con `npx web-push generate-vapid-keys` y no lo
+   cambies después — rotarlo invalida todas las suscripciones existentes).
 3. **Cron de resultados**: Vercel Hobby limita los crons a 1×/día. Para el poleo fino (cada ~10 min),
    configurar un disparador externo que pegue a `https://<dominio>/api/cron/sync` con el header
    `Authorization: Bearer <CRON_SECRET>`:

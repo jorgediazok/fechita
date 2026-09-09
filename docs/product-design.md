@@ -90,6 +90,7 @@ Sin dinero ni apuestas — descartado por riesgo legal/regulatorio de juego en A
 ### Retención entre fechas (problema: el fútbol no tiene ritmo diario como Duolingo)
 - La "racha" del usuario se mide por fecha/partido jugado, no por día calendario — evita forzar un hábito diario artificial sobre un deporte que no lo tiene.
 - Para los días sin partido: el gancho es revisar la posición en la liga de la fecha (puede moverse por otros cargando pronósticos), reforzado con notificaciones push inteligentes ("te superaron", "cierra la carga en 2 horas", "estás cerca de ascender").
+  - **Estado (v1, 2026-09-09):** web push implementado (`web/src/lib/push/`, ver README §"Notificaciones push"). Opt-in con toggle en `/perfil` + tarjeta post-onboarding en `/pronosticos`. Disparadores activos: terminó la fecha / sumaste N pts (T2), insignia nueva (T3), cierre de fecha con ascenso/descenso/ganador (T4), y una de prueba. **Pendiente:** "cierra la carga en ~2h" (T5, necesita el cron corriendo) y "te superaron" / "cerca de ascender" (T6, necesita snapshot de posición para diffear).
 - **Trivia diaria de cultura futbolera** (no ligada a un partido específico): aporta un tope de **5 puntos extra por fecha** a la liga (no ilimitado, para no diluir que el ascenso refleje saber predecir fútbol real de verdad). El resto de puntos de trivia van a un track separado de XP/insignias, sin afectar el ascenso.
 
 ## Dirección de diseño visual (mockups, 2026-09-05)

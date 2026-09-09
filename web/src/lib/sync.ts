@@ -4,6 +4,7 @@ import type { FetchWindow } from "./api-football/provider";
 import { COMPETITIONS, type CompetitionSeed } from "./competitions";
 import { calculatePoints } from "./points";
 import { evaluateBadgesForUsers } from "./badges/award";
+import { notifyFinishedRounds } from "./push/notify";
 import CompetitionModel from "@/models/Competition";
 import TeamModel from "@/models/Team";
 import MatchModel from "@/models/Match";
@@ -48,6 +49,7 @@ export async function syncCompetition(
   let matchesUpserted = 0;
   let predictionsScored = 0;
   const scoredUserIds = new Set<string>();
+  const finishedRounds = new Set<string>();
 
   for (const fixture of fixtures) {
     const [homeTeam, awayTeam] = await Promise.all([
@@ -74,6 +76,8 @@ export async function syncCompetition(
       { upsert: true, returnDocument: "after" }
     );
     matchesUpserted += 1;
+
+    if (status === "finished") finishedRounds.add(match.round);
 
     if (status === "finished" && match.homeScore !== null && match.awayScore !== null) {
       const pendingPredictions = await PredictionModel.find({ matchId: match._id, points: null });
@@ -106,6 +110,9 @@ export async function syncCompetition(
   if (scoredUserIds.size > 0) {
     await evaluateBadgesForUsers([...scoredUserIds]);
   }
+
+  // T2 — "se terminó la fecha, sumaste N pts" (una sola vez por fecha, cuando terminó entera).
+  await notifyFinishedRounds([...finishedRounds]);
 
   return { competition: competition.slug, matchesUpserted, predictionsScored };
 }

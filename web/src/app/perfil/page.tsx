@@ -11,6 +11,7 @@ import { getCareerStats, bestTierOf } from "@/lib/profile";
 import { TIER_FULL_NAMES, type TierCode } from "@/lib/leagues";
 import { SITE_NAME, SITE_URL, CONTACT_EMAIL, APP_VERSION } from "@/lib/site";
 import { ShareButton } from "@/components/ShareButton";
+import { PushToggle } from "@/components/PushClient";
 import { logoutAction } from "./actions";
 
 const memberSinceFmt = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" });
@@ -166,6 +167,8 @@ export default async function PerfilPage() {
               <path d="M9 6l6 6-6 6" stroke="#57628A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
+
+          <PushToggle />
 
           <Link
             href="/reglas"

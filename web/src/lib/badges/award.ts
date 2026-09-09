@@ -8,6 +8,8 @@ import MatchModel from "@/models/Match";
 import TeamModel from "@/models/Team";
 import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserBadgeModel from "@/models/UserBadge";
+import { sendToUser } from "../push/send";
+import { badgeMessage } from "../push/messages";
 
 // Un "acierto" es un pronóstico que sumó al menos 3 puntos (dirección correcta). El punto
 // flat de 1 por partido anulado no cuenta.
@@ -201,6 +203,15 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
       { $setOnInsert: { userId: user._id, badgeId, earnedAt: new Date(), seen: false } },
       { upsert: true }
     );
+  }
+
+  // T3 — push por cada insignia nueva. dedupeKey = badgeId → una sola vez por insignia,
+  // sin importar por qué camino se detectó (sync, cierre de fecha, o carga de /pronosticos).
+  for (const badgeId of newly) {
+    await sendToUser(String(user._id), badgeMessage(badgeId), {
+      kind: "badge",
+      dedupeKey: badgeId,
+    });
   }
 
   return newly;
