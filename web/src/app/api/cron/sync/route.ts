@@ -28,9 +28,11 @@ async function decide(): Promise<{ window: FetchWindow | null; reason: string }>
   const state = await DevStateModel.findOne({ key: "singleton" });
   const sinceLast = state?.lastSyncAt ? now - new Date(state.lastSyncAt).getTime() : Infinity;
 
+  // Un partido casi nunca termina antes de los 95 min. La cota de arriba (3h) evita seguir
+  // poleando uno que quedó colgado (suspendido, sin dato) — de eso se encarga la rama "full".
   const finishing = await MatchModel.exists({
     status: { $in: ["scheduled", "live"] },
-    kickoffAt: { $gte: new Date(now - 4 * HOUR), $lte: new Date(now - 85 * MIN) },
+    kickoffAt: { $gte: new Date(now - 3 * HOUR), $lte: new Date(now - 95 * MIN) },
   });
   if (finishing) return { window: "recent", reason: "partido terminando, buscando resultado" };
 
@@ -39,7 +41,7 @@ async function decide(): Promise<{ window: FetchWindow | null; reason: string }>
   if (sinceLast > 2 * HOUR) {
     const stale = await MatchModel.exists({
       status: { $in: ["scheduled", "live"] },
-      kickoffAt: { $gte: new Date(now - 3 * DAY), $lte: new Date(now - 4 * HOUR) },
+      kickoffAt: { $gte: new Date(now - 3 * DAY), $lte: new Date(now - 3 * HOUR) },
     });
     if (stale) return { window: "full", reason: "resultado atrasado" };
   }
