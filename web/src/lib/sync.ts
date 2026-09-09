@@ -10,7 +10,14 @@ import PredictionModel from "@/models/Prediction";
 async function upsertTeam(team: ApiFixture["teams"]["home"]) {
   return TeamModel.findOneAndUpdate(
     { externalId: team.id },
-    { externalId: team.id, name: team.name, shortName: team.name, logoUrl: team.logo, country: "Argentina" },
+    {
+      externalId: team.id,
+      name: team.name,
+      shortName: team.name,
+      country: "Argentina",
+      // No pisar un escudo ya guardado con vacío: algunos providers (The Odds API) no traen logo.
+      ...(team.logo ? { logoUrl: team.logo } : {}),
+    },
     { upsert: true, returnDocument: "after" }
   );
 }

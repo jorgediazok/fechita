@@ -1,12 +1,15 @@
 import type { FixtureProvider } from "./provider";
 import { mockFixtureProvider } from "./mockProvider";
 import { replayFixtureProvider } from "./replayProvider";
+import { theoddsapiFixtureProvider } from "./theoddsapiProvider";
 import { liveFixtureProvider } from "./liveProvider";
 import { thesportsdbFixtureProvider } from "./thesportsdbProvider";
 import { getFixtureSource } from "./source";
 
 export function getFixtureProvider(): FixtureProvider {
   switch (getFixtureSource()) {
+    case "theoddsapi":
+      return theoddsapiFixtureProvider;
     case "replay":
       return replayFixtureProvider;
     case "thesportsdb":

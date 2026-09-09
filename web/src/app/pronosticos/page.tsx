@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import UserModel from "@/models/User";
-import { isPast, isWithinDays } from "@/lib/time";
+import { isPast, isWithinDays, isWithinPastDays } from "@/lib/time";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
@@ -131,9 +131,15 @@ export default async function PronosticosPage() {
     matchesByRound.set(match.round, list);
   }
 
+  // Una fecha se muestra si su primer partido está dentro de la ventana de revelado y su
+  // último partido no terminó hace más de 2 días — así la fecha recién jugada queda un rato
+  // para ver cómo te fue, y después desaparece (con datos reales el feed acumularía todas
+  // las fechas pasadas si no).
   const visibleRounds = [...matchesByRound.entries()].filter(([, roundMatches]) => {
-    const earliestKickoff = Math.min(...roundMatches.map((m) => new Date(m.kickoffAt).getTime()));
-    return isWithinDays(earliestKickoff, REVEAL_WINDOW_DAYS);
+    const kickoffs = roundMatches.map((m) => m.kickoffAt);
+    const earliest = kickoffs.reduce((a, b) => (a < b ? a : b));
+    const latest = kickoffs.reduce((a, b) => (a > b ? a : b));
+    return isWithinDays(earliest, REVEAL_WINDOW_DAYS) && isWithinPastDays(latest, 2);
   });
 
   return (
@@ -283,7 +289,7 @@ export default async function PronosticosPage() {
         {visibleRounds.map(([round, roundMatches]) => (
           <div key={round} className="flex flex-col gap-2.5">
             <div className="text-xs font-extrabold tracking-wide text-[#8A8FB2]">
-              PENDIENTES · {round.toUpperCase()}
+              {roundMatches.every((m) => m.status === "finished") ? "RESULTADOS" : "PENDIENTES"} · {round.toUpperCase()}
             </div>
 
             {roundMatches.map((match) => {
