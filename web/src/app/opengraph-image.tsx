@@ -55,7 +55,7 @@ export default function OpengraphImage() {
             letterSpacing: 1,
           }}
         >
-          <span>Liga semanal</span>
+          <span>Liga por fecha</span>
           <span style={{ color: "rgba(163,144,255,0.4)" }}>•</span>
           <span>Ascensos y descensos</span>
           <span style={{ color: "rgba(163,144,255,0.4)" }}>•</span>

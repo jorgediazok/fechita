@@ -1,11 +1,10 @@
 import { Types } from "mongoose";
 import { connectToDatabase } from "./db";
-import WeeklyLeagueGroupModel from "@/models/WeeklyLeagueGroup";
+import RoundLeagueGroupModel from "@/models/RoundLeagueGroup";
 import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserModel from "@/models/User";
+import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
-import DevStateModel from "@/models/DevState";
-import { isMockMode } from "./api-football/source";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -19,116 +18,122 @@ import {
 
 export { TIER_ORDER, TIER_LABELS, TIER_FULL_NAMES, tierCanPromote, tierCanRelegate, type TierCode };
 
-// Argentina no usa horario de verano desde 2009 — UTC-3 fijo, así que el
-// cálculo de semana no necesita lidiar con corrimientos de DST.
-const ART_OFFSET_MS = 3 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_GROUP_SIZE = 24;
 
-function mondayKeyFor(date: Date): string {
-  const shifted = new Date(date.getTime() - ART_OFFSET_MS);
-  const dayOfWeek = shifted.getUTCDay(); // 0 = domingo .. 6 = sábado
-  const daysSinceMonday = (dayOfWeek + 6) % 7;
-  const artMondayUtcMidnight = Date.UTC(
-    shifted.getUTCFullYear(),
-    shifted.getUTCMonth(),
-    shifted.getUTCDate() - daysSinceMonday
-  );
-  return new Date(artMondayUtcMidnight).toISOString().slice(0, 10);
+// ─────────────────────────────────────────────────────────────────────────────
+// Fechas del campeonato (derivadas de los partidos, campo Match.round)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type RoundInfo = { roundKey: string; first: Date; last: Date; total: number; done: number };
+
+async function getRoundsInOrder(): Promise<RoundInfo[]> {
+  const rows = await MatchModel.aggregate<{
+    _id: string;
+    first: Date;
+    last: Date;
+    total: number;
+    done: number;
+  }>([
+    {
+      $group: {
+        _id: "$round",
+        first: { $min: "$kickoffAt" },
+        last: { $max: "$kickoffAt" },
+        total: { $sum: 1 },
+        done: { $sum: { $cond: [{ $in: ["$status", ["finished", "cancelled"]] }, 1, 0] } },
+      },
+    },
+    { $sort: { first: 1 } },
+  ]);
+  return rows.map((r) => ({ roundKey: r._id, first: r.first, last: r.last, total: r.total, done: r.done }));
 }
 
-export function getWeekBoundsForKey(weekKey: string) {
-  const [y, m, d] = weekKey.split("-").map(Number);
-  const artMondayUtcMidnight = Date.UTC(y, m - 1, d);
-  const weekStart = new Date(artMondayUtcMidnight + ART_OFFSET_MS);
-  const weekEnd = new Date(artMondayUtcMidnight + 7 * DAY_MS + ART_OFFSET_MS);
-  return { weekStart, weekEnd };
-}
-
-// Solo para el panel dev de /liga ("Cerrar semana ahora"): sin esto, forzar el cierre de
-// un grupo sin esperar a que pase una semana real recrea el grupo siguiente con el mismo
-// weekKey de hoy — mismas predicciones ya cargadas, mismos puntos en vivo, como si nada
-// hubiera pasado. Este offset simula el paso de semanas reales sin tocar Date.now() global
-// (los kickoffAt de los partidos siguen siendo reales, así que los puntos sí arrancan en 0
-// en la semana "futura" simulada). Se persiste en DevState porque `next dev` reinicia el
-// proceso seguido y un offset en memoria dejaba a los usuarios repartidos entre weekKeys
-// distintos sin poder cruzarse en la misma liga.
-const DEV_STATE_KEY = "singleton";
-
-async function getDevWeekOffsetDays(): Promise<number> {
-  if (!isMockMode()) return 0;
-  const state = await DevStateModel.findOne({ key: DEV_STATE_KEY });
-  return state?.weekOffsetDays ?? 0;
-}
-
-export async function bumpDevWeek() {
+// La fecha "actual" para inscribir: la primera (por kickoff) que todavía tiene partidos por
+// jugar y no tiene un grupo cerrado. Una fecha ya terminada nunca es "la actual" (si no,
+// arrancar la liga hoy inscribiría a todos en una fecha vieja y la cerraría con 0 puntos).
+// Si todas las fechas terminaron, se usa la última no cerrada.
+export async function getCurrentRoundKey(): Promise<string | null> {
   await connectToDatabase();
-  await DevStateModel.findOneAndUpdate(
-    { key: DEV_STATE_KEY },
-    { $inc: { weekOffsetDays: 7 } },
-    { upsert: true }
+  const rounds = await getRoundsInOrder();
+  if (rounds.length === 0) return null;
+
+  const closed = new Set(
+    (await RoundLeagueGroupModel.find({ status: "closed" }, { roundKey: 1 })).map((g) => g.roundKey)
   );
+  const open = rounds.filter((r) => !closed.has(r.roundKey));
+  if (open.length === 0) return rounds[rounds.length - 1].roundKey;
+
+  const pending = open.find((r) => r.done < r.total);
+  return (pending ?? open[open.length - 1]).roundKey;
 }
 
-export async function getSimulatedNow(): Promise<number> {
-  const real = Date.now();
-  if (!isMockMode()) return real;
-  return real + (await getDevWeekOffsetDays()) * DAY_MS;
+export async function getRoundBounds(roundKey: string) {
+  const agg = await MatchModel.aggregate<{ first: Date; last: Date }>([
+    { $match: { round: roundKey } },
+    { $group: { _id: null, first: { $min: "$kickoffAt" }, last: { $max: "$kickoffAt" } } },
+  ]);
+  return agg.length ? { first: agg[0].first, last: agg[0].last } : null;
 }
 
-export async function getWeekBounds(date?: Date) {
-  const resolved = date ?? new Date(await getSimulatedNow());
-  const weekKey = mondayKeyFor(resolved);
-  const { weekStart, weekEnd } = getWeekBoundsForKey(weekKey);
-  return { weekKey, weekStart, weekEnd };
+export async function getRoundProgress(roundKey: string) {
+  const rounds = await getRoundsInOrder();
+  const info = rounds.find((r) => r.roundKey === roundKey);
+  if (!info) return { total: 0, done: 0, complete: false };
+  return { total: info.total, done: info.done, complete: info.total > 0 && info.done === info.total };
 }
 
-// Tamaño de la zona de ascenso/descenso: ~25% del grupo, clampeado para que
-// un grupo chico (dev, pocos usuarios) nunca promueva y descienda a la misma
-// persona. Con un grupo de 20-25 da ~5, calzando con el "top 5 / últimos 5"
-// del doc de producto. La página de liga usa el mismo criterio para que lo
-// que el usuario ve coincida con lo que va a pasar al cerrar la semana.
+// ─────────────────────────────────────────────────────────────────────────────
+// Standing en vivo
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Tamaño de la zona de ascenso/descenso: ~25% del grupo, clampeado para que un grupo chico
+// (dev, pocos usuarios) nunca promueva y descienda a la misma persona. Con un grupo de ~24
+// da ~6. La página de liga usa el mismo criterio para que lo que el usuario ve coincida con
+// lo que va a pasar al cerrar la fecha.
 export function zoneSize(memberCount: number) {
   if (memberCount <= 1) return 0;
   const target = Math.round(memberCount * 0.25);
   return Math.min(Math.max(target, 1), Math.floor(memberCount / 2));
 }
 
-async function getLivePoints(userIds: Types.ObjectId[], weekStart: Date, weekEnd: Date) {
+async function getLivePoints(userIds: Types.ObjectId[], roundKey: string) {
   if (userIds.length === 0) return new Map<string, number>();
 
   const rows = await PredictionModel.aggregate<{ _id: Types.ObjectId; total: number }>([
     { $match: { userId: { $in: userIds }, points: { $ne: null } } },
-    {
-      $lookup: {
-        from: "matches",
-        localField: "matchId",
-        foreignField: "_id",
-        as: "match",
-      },
-    },
+    { $lookup: { from: "matches", localField: "matchId", foreignField: "_id", as: "match" } },
     { $unwind: "$match" },
-    { $match: { "match.kickoffAt": { $gte: weekStart, $lt: weekEnd } } },
+    { $match: { "match.round": roundKey } },
     { $group: { _id: "$userId", total: { $sum: "$points" } } },
   ]);
 
   return new Map(rows.map((r) => [String(r._id), r.total]));
 }
 
-export async function getGroupStanding(groupId: Types.ObjectId, weekKey: string) {
+async function standingFor(groupId: Types.ObjectId, roundKey: string) {
   const memberships = await LeagueMembershipModel.find({ groupId });
-  const { weekStart, weekEnd } = getWeekBoundsForKey(weekKey);
   const pointsMap = await getLivePoints(
     memberships.map((m) => m.userId),
-    weekStart,
-    weekEnd
+    roundKey
   );
   return memberships
     .map((m) => ({ membership: m, points: pointsMap.get(String(m.userId)) ?? 0 }))
     .sort((a, b) => b.points - a.points);
 }
 
-async function closeGroup(group: InstanceType<typeof WeeklyLeagueGroupModel>) {
-  const ranked = await getGroupStanding(group._id, group.weekKey);
+export async function getGroupStanding(groupId: Types.ObjectId | string) {
+  const group = await RoundLeagueGroupModel.findById(groupId);
+  if (!group) return [];
+  return standingFor(group._id, group.roundKey);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cierre de fecha: ascenso / descenso / ganador de la fecha
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function closeGroup(group: InstanceType<typeof RoundLeagueGroupModel>) {
+  const ranked = await standingFor(group._id, group.roundKey);
   const size = zoneSize(ranked.length);
   const canPromote = tierCanPromote(group.tier as TierCode);
   const canRelegate = tierCanRelegate(group.tier as TierCode);
@@ -144,6 +149,7 @@ async function closeGroup(group: InstanceType<typeof WeeklyLeagueGroupModel>) {
 
     membership.points = points;
     membership.result = result;
+    membership.wonRound = i === 0 && ranked.length > 1;
     await membership.save();
 
     const user = await UserModel.findById(membership.userId);
@@ -157,9 +163,35 @@ async function closeGroup(group: InstanceType<typeof WeeklyLeagueGroupModel>) {
   await group.save();
 }
 
-// Busca el último ascenso/descenso que el usuario todavía no vio anunciado — se dispara
-// una sola vez por resultado (ver resultAcknowledged en el modelo). "stayed" no genera
-// anuncio, solo promoted/relegated.
+export async function closeExpiredGroups() {
+  await connectToDatabase();
+  const active = await RoundLeagueGroupModel.find({ status: "active" });
+  if (active.length === 0) return;
+
+  const rounds = new Map((await getRoundsInOrder()).map((r) => [r.roundKey, r]));
+  const now = Date.now();
+  const affected = new Set<string>();
+
+  for (const group of active) {
+    const info = rounds.get(group.roundKey);
+    const allDone = info ? info.total > 0 && info.done === info.total : false;
+    const pastDeadline = group.closesAt.getTime() <= now;
+    if (!allDone && !pastDeadline) continue;
+
+    const members = await LeagueMembershipModel.find({ groupId: group._id }, { userId: 1 });
+    for (const m of members) affected.add(String(m.userId));
+    await closeGroup(group);
+  }
+
+  // Reinscribir enseguida a todos los que estaban en un grupo cerrado (con su tier ya
+  // actualizado) — sin esto, dos que ascienden juntos no se cruzan hasta que ambos recargan.
+  for (const userId of affected) {
+    await enrollUserForCurrentRound(userId);
+  }
+}
+
+// Anuncio de ascenso/descenso pendiente de ver (una sola vez por resultado). "stayed" no
+// genera anuncio, solo promoted/relegated.
 export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
   const membership = await LeagueMembershipModel.findOne({
     userId,
@@ -168,7 +200,7 @@ export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
   }).sort({ createdAt: -1 });
   if (!membership) return null;
 
-  const group = await WeeklyLeagueGroupModel.findById(membership.groupId);
+  const group = await RoundLeagueGroupModel.findById(membership.groupId);
   if (!group) return null;
 
   const finalMemberships = await LeagueMembershipModel.find({ groupId: group._id }).sort({ points: -1 });
@@ -190,6 +222,7 @@ export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
     membershipId: String(membership._id),
     result: membership.result as "promoted" | "relegated",
     oldTier: group.tier as TierCode,
+    roundKey: group.roundKey,
     points: membership.points,
     standings,
   };
@@ -200,72 +233,54 @@ export async function acknowledgeLeagueResult(membershipId: Types.ObjectId | str
   await LeagueMembershipModel.findByIdAndUpdate(membershipId, { resultAcknowledged: true });
 }
 
-export async function closeExpiredGroups() {
-  await connectToDatabase();
-  const expiredGroups = await WeeklyLeagueGroupModel.find({
-    status: "active",
-    closesAt: { $lte: new Date() },
-  });
-  if (expiredGroups.length === 0) return;
+// ─────────────────────────────────────────────────────────────────────────────
+// Inscripción
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const affectedUserIds = new Set<string>();
-  for (const group of expiredGroups) {
-    const memberships = await LeagueMembershipModel.find({ groupId: group._id }, { userId: 1 });
-    for (const m of memberships) affectedUserIds.add(String(m.userId));
-    await closeGroup(group);
-  }
-
-  // Reinscribir a todos los que estaban en un grupo que se cerró: sin esto, la membresía
-  // en la categoría nueva (o la misma, si se quedó) recién se creaba cuando ese usuario
-  // volvía a abrir /liga — dos que ascienden juntos no se cruzaban hasta que ambos
-  // recargaban la pantalla. Ahora, apenas se cierra la semana, el grupo siguiente queda
-  // armado con todos adentro y en su tier actualizado.
-  for (const userId of affectedUserIds) {
-    await enrollUserForCurrentWeek(userId);
-  }
-}
-
-const MAX_GROUP_SIZE = 24;
-
-// Encuentra (o crea) el grupo de la semana actual para el tier del usuario y le garantiza
-// una membresía en él. No cierra semanas vencidas — de eso se encarga closeExpiredGroups,
-// que a su vez llama acá; separarlos evita una recursión.
-export async function enrollUserForCurrentWeek(userId: Types.ObjectId | string) {
+// Encuentra (o crea) el grupo de la fecha actual para el tier del usuario y le garantiza una
+// membresía. No cierra fechas vencidas — de eso se encarga closeExpiredGroups, que llama acá.
+export async function enrollUserForCurrentRound(userId: Types.ObjectId | string) {
   await connectToDatabase();
 
   const user = await UserModel.findById(userId);
   if (!user) throw new Error("Usuario no encontrado");
 
-  const { weekKey, weekEnd } = await getWeekBounds();
+  const roundKey = await getCurrentRoundKey();
+  if (!roundKey) throw new Error("No hay fechas cargadas todavía — sincronizá partidos");
+
   const tier = (user.currentTier ?? "D") as TierCode;
+  const groups = await RoundLeagueGroupModel.find({ roundKey, tier, status: "active" });
 
-  const groups = await WeeklyLeagueGroupModel.find({ weekKey, tier, status: "active" });
-
-  let group = null as InstanceType<typeof WeeklyLeagueGroupModel> | null;
-  let membership = null as InstanceType<typeof LeagueMembershipModel> | null;
-
-  if (groups.length > 0) {
-    membership = await LeagueMembershipModel.findOne({
-      groupId: { $in: groups.map((g) => g._id) },
-      userId: user._id,
-    });
-    if (membership) {
-      group = groups.find((g) => String(g._id) === String(membership!.groupId)) ?? null;
-    }
-  }
+  let membership = groups.length
+    ? await LeagueMembershipModel.findOne({ groupId: { $in: groups.map((g) => g._id) }, userId: user._id })
+    : null;
+  let group = membership
+    ? groups.find((g) => String(g._id) === String(membership!.groupId)) ?? null
+    : null;
 
   if (!membership) {
     for (const g of groups) {
-      const count = await LeagueMembershipModel.countDocuments({ groupId: g._id });
-      if (count < MAX_GROUP_SIZE) {
+      if ((await LeagueMembershipModel.countDocuments({ groupId: g._id })) < MAX_GROUP_SIZE) {
         group = g;
         break;
       }
     }
     if (!group) {
-      group = await WeeklyLeagueGroupModel.create({ weekKey, tier, closesAt: weekEnd, status: "active" });
+      const bounds = await getRoundBounds(roundKey);
+      const lastMs = bounds?.last.getTime() ?? Date.now() + 3 * DAY_MS;
+      group = await RoundLeagueGroupModel.create({
+        roundKey,
+        tier,
+        closesAt: new Date(lastMs + DAY_MS),
+        status: "active",
+      });
     }
-    membership = await LeagueMembershipModel.create({ groupId: group._id, userId: user._id, points: 0, result: null });
+    membership = await LeagueMembershipModel.create({
+      groupId: group._id,
+      userId: user._id,
+      points: 0,
+      result: null,
+    });
   }
 
   return { group: group!, membership, user };
@@ -274,5 +289,5 @@ export async function enrollUserForCurrentWeek(userId: Types.ObjectId | string) 
 export async function getOrCreateActiveMembership(userId: Types.ObjectId | string) {
   await connectToDatabase();
   await closeExpiredGroups();
-  return enrollUserForCurrentWeek(userId);
+  return enrollUserForCurrentRound(userId);
 }

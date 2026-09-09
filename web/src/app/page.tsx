@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   {
-    title: "Liga semanal",
-    body: "Cada semana competís en un grupo de tu categoría. Los que más aciertan suben, los últimos bajan.",
+    title: "Liga por fecha",
+    body: "Cada fecha competís en un grupo de tu categoría. Los que más aciertan suben, los últimos bajan.",
     icon: (
       <path d="M4 21V10M12 21V3M20 21v-7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
     ),
@@ -32,7 +32,7 @@ const FEATURES = [
   },
   {
     title: "Ascensos y descensos",
-    body: "De la Primera D a la Primera División. No es un ranking eterno: se pelea cada semana.",
+    body: "De la Primera D a la Primera División. No es un ranking eterno: se pelea cada fecha.",
     icon: (
       <>
         <path d="M4 20h16" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
@@ -88,7 +88,7 @@ export default async function Home() {
             <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
                 El prode del fútbol argentino,{" "}
-                <span className="block">con liga semanal.</span>
+                <span className="block">con ascensos y descensos.</span>
               </h1>
               <p className="mt-4 max-w-lg text-base font-bold text-[#9195C2] mx-auto md:mx-0">
                 Pronosticá la fecha, sumá puntos y subí de categoría compitiendo contra otros hinchas.
@@ -177,7 +177,7 @@ function PhoneMock() {
               <div className="font-display text-[34px] leading-none text-white">4°</div>
               <div className="text-left">
                 <div className="text-[8px] font-extrabold tracking-wide text-[#F5F5FF]">DE 11 · PRIMERA C</div>
-                <div className="text-[8px] font-extrabold text-[#F5F5FF]/60">47 pts esta semana</div>
+                <div className="text-[8px] font-extrabold text-[#F5F5FF]/60">47 pts esta fecha</div>
               </div>
             </div>
             <div className="relative mt-2.5 h-2 rounded-full bg-white/15">

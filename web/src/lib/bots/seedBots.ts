@@ -1,7 +1,7 @@
 import { connectToDatabase } from "@/lib/db";
 import UserModel from "@/models/User";
 import TeamModel from "@/models/Team";
-import { enrollUserForCurrentWeek } from "@/lib/leagues";
+import { enrollUserForCurrentRound } from "@/lib/leagues";
 import { TIER_ORDER } from "@/lib/tiers";
 import { BOT_NAMES, botEmail } from "./names";
 
@@ -57,7 +57,7 @@ export async function seedBots(): Promise<SeedBotsResult> {
   }
 
   const bots = await UserModel.find({ email: { $in: emails } }, { _id: 1 });
-  for (const bot of bots) await enrollUserForCurrentWeek(bot._id);
+  for (const bot of bots) await enrollUserForCurrentRound(bot._id);
 
   return { total: BOT_NAMES.length, created };
 }

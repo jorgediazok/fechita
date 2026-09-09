@@ -8,7 +8,7 @@ import type { PickerTeam } from "@/components/ClubPicker";
 export const metadata: Metadata = {
   title: "Crear cuenta",
   description:
-    "Creá tu cuenta gratis, elegí tu club y empezá a pronosticar la fecha del fútbol argentino con tu liga semanal.",
+    "Creá tu cuenta gratis, elegí tu club y empezá a pronosticar la fecha del fútbol argentino con tu liga.",
   alternates: { canonical: "/signup" },
 };
 

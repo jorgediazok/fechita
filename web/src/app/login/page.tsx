@@ -6,7 +6,7 @@ import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Entrá a tu cuenta para cargar los pronósticos de la fecha y ver cómo vas en tu liga semanal.",
+  description: "Entrá a tu cuenta para cargar los pronósticos de la fecha y ver cómo vas en tu liga.",
   alternates: { canonical: "/login" },
 };
 

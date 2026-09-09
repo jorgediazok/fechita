@@ -1,5 +1,5 @@
 /**
- * Seed / limpieza de datos de prueba para las ligas semanales (capa 3).
+ * Seed / limpieza de datos de prueba para las ligas por fecha (capa 3).
  *
  *   npm run seed            → limpia lo anterior y crea usuarios de prueba repartidos por tier
  *   npm run seed:clean      → solo limpia, no crea nada
@@ -7,11 +7,10 @@
  * "Limpiar" borra:
  *   - todos los usuarios de prueba (email @seed.local) y sus predicciones / membresías
  *   - membresías de liga y de grupo huérfanas (usuario o grupo ya inexistente)
- *   - WeeklyLeagueGroup cerrados y sin miembros (chatarra de sesiones de test viejas)
- *   - el corrimiento de semana simulado vuelve a 0 (DevState)
+ *   - RoundLeagueGroup cerrados y sin miembros (chatarra de sesiones de test viejas)
  *
  * Los usuarios reales (Google / email+password) y sus datos NO se tocan, salvo que se los
- * reinscriba en la liga de la semana actual para que queden agrupados con la camada nueva.
+ * reinscriba en la liga de la fecha actual para que queden agrupados con la camada nueva.
  *
  * Los puntos de las predicciones sembradas se asignan a mano (0/3/5) para que las tablas
  * tengan spread ya mismo y se pueda ver la zona de ascenso/descenso sin esperar resultados.
@@ -25,11 +24,10 @@ import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import GroupMembershipModel from "@/models/GroupMembership";
 import LeagueMembershipModel from "@/models/LeagueMembership";
-import WeeklyLeagueGroupModel from "@/models/WeeklyLeagueGroup";
-import DevStateModel from "@/models/DevState";
+import RoundLeagueGroupModel from "@/models/RoundLeagueGroup";
 import { PREDICTION_DIRECTIONS } from "@/models/Prediction";
 import { TIER_ORDER } from "@/lib/tiers";
-import { enrollUserForCurrentWeek, getWeekBounds } from "@/lib/leagues";
+import { enrollUserForCurrentRound, getCurrentRoundKey } from "@/lib/leagues";
 import { seedBots, runBots } from "@/lib/bots";
 
 const SEED_DOMAIN = "seed.local";
@@ -71,42 +69,26 @@ async function clean() {
   console.log(`  membresías huérfanas por usuario: liga ${orphanLeague.deletedCount}, grupo ${orphanGroup.deletedCount}`);
 
   // Membresías de liga cuyo grupo ya no existe.
-  const groupIds = new Set((await WeeklyLeagueGroupModel.find({}, { _id: 1 })).map((g) => String(g._id)));
+  const groupIds = new Set((await RoundLeagueGroupModel.find({}, { _id: 1 })).map((g) => String(g._id)));
   const danglingLeague = await LeagueMembershipModel.find({}, { _id: 1, groupId: 1 });
   const toDrop = danglingLeague.filter((m) => !groupIds.has(String(m.groupId))).map((m) => m._id);
   if (toDrop.length) await LeagueMembershipModel.deleteMany({ _id: { $in: toDrop } });
   console.log(`  membresías de liga sin grupo: ${toDrop.length}`);
 
-  // WeeklyLeagueGroup cerrados o sin ningún miembro → chatarra.
-  const allGroups = await WeeklyLeagueGroupModel.find({}, { _id: 1, status: 1 });
+  // Grupos de fecha cerrados o sin ningún miembro → chatarra. Los grupos de la fecha actual
+  // con miembros se dejan (los reinscribe seed() más abajo).
+  const currentRoundKey = await getCurrentRoundKey();
+  const allGroups = await RoundLeagueGroupModel.find({}, { _id: 1, status: 1, roundKey: 1 });
   let removedGroups = 0;
   for (const g of allGroups) {
     const count = await LeagueMembershipModel.countDocuments({ groupId: g._id });
-    if (g.status === "closed" || count === 0) {
+    if (g.status === "closed" || count === 0 || g.roundKey !== currentRoundKey) {
       await LeagueMembershipModel.deleteMany({ groupId: g._id });
-      await WeeklyLeagueGroupModel.deleteOne({ _id: g._id });
+      await RoundLeagueGroupModel.deleteOne({ _id: g._id });
       removedGroups++;
     }
   }
-  console.log(`  grupos semanales cerrados / vacíos borrados: ${removedGroups}`);
-
-  await DevStateModel.updateOne({ key: "singleton" }, { weekOffsetDays: 0 }, { upsert: true });
-  console.log("  corrimiento de semana simulado reseteado a 0");
-
-  // Con el offset de vuelta en 0, cualquier grupo activo de una semana futura quedó
-  // inalcanzable (nadie va a caer en ese weekKey) — es la chatarra que dejaba avanzar
-  // semanas y después reiniciar. weekKey es YYYY-MM-DD, comparación de strings alcanza.
-  const { weekKey: currentWeekKey } = await getWeekBounds();
-  const futureGroups = await WeeklyLeagueGroupModel.find(
-    { status: "active", weekKey: { $gt: currentWeekKey } },
-    { _id: 1 }
-  );
-  if (futureGroups.length) {
-    const ids = futureGroups.map((g) => g._id);
-    await LeagueMembershipModel.deleteMany({ groupId: { $in: ids } });
-    await WeeklyLeagueGroupModel.deleteMany({ _id: { $in: ids } });
-  }
-  console.log(`  grupos activos de semanas futuras (inalcanzables) borrados: ${futureGroups.length}`);
+  console.log(`  grupos de fecha cerrados / viejos / vacíos borrados: ${removedGroups}`);
 }
 
 async function seed() {
@@ -115,12 +97,10 @@ async function seed() {
     throw new Error("No hay equipos en la base — corré una sync de partidos primero (/pronosticos, panel dev).");
   }
 
-  const { weekStart, weekEnd, weekKey } = await getWeekBounds();
-  const weekMatches = await MatchModel.find(
-    { kickoffAt: { $gte: weekStart, $lt: weekEnd } },
-    { _id: 1 }
-  );
-  console.log(`  semana ${weekKey}: ${weekMatches.length} partidos para pronosticar`);
+  const roundKey = await getCurrentRoundKey();
+  if (!roundKey) throw new Error("No hay fechas cargadas — corré una sync de partidos primero.");
+  const roundMatches = await MatchModel.find({ round: roundKey }, { _id: 1 });
+  console.log(`  ${roundKey}: ${roundMatches.length} partidos para pronosticar`);
 
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
   const usedNames = new Set<string>();
@@ -150,7 +130,7 @@ async function seed() {
   const users = await UserModel.insertMany(userDocs);
   await PredictionModel.insertMany(
     users.flatMap((u) =>
-      weekMatches.map((m) => ({
+      roundMatches.map((m) => ({
         userId: u._id,
         matchId: m._id,
         predictedDirection: pick(directions),
@@ -158,7 +138,7 @@ async function seed() {
       }))
     )
   );
-  for (const u of users) await enrollUserForCurrentWeek(u._id);
+  for (const u of users) await enrollUserForCurrentRound(u._id);
   console.log(`  usuarios de prueba creados: ${users.length} (${USERS_PER_TIER} por tier) — contraseña: ${SEED_PASSWORD}`);
 
   const bots = await seedBots();
@@ -171,8 +151,8 @@ async function seed() {
     { email: { $not: new RegExp(`@${SEED_DOMAIN}$`) } },
     { _id: 1 }
   );
-  for (const u of realUsers) await enrollUserForCurrentWeek(u._id);
-  console.log(`  usuarios reales/bot reinscriptos en la liga de la semana: ${realUsers.length}`);
+  for (const u of realUsers) await enrollUserForCurrentRound(u._id);
+  console.log(`  usuarios reales/bot reinscriptos en la liga de la fecha: ${realUsers.length}`);
 }
 
 async function main() {

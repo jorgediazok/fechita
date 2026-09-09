@@ -2,23 +2,35 @@
 
 import { revalidatePath } from "next/cache";
 import { connectToDatabase } from "@/lib/db";
-import WeeklyLeagueGroupModel from "@/models/WeeklyLeagueGroup";
-import { closeExpiredGroups, acknowledgeLeagueResult, bumpDevWeek } from "@/lib/leagues";
+import MatchModel from "@/models/Match";
+import { closeExpiredGroups, acknowledgeLeagueResult, getCurrentRoundKey } from "@/lib/leagues";
+import { syncAllCompetitions } from "@/lib/sync";
+import { setMockResult } from "@/lib/api-football";
+import { isMockMode } from "@/lib/api-football/source";
 import { runBots } from "@/lib/bots";
 
-// Solo para el panel dev: fuerza el cierre de todas las ligas semanales
-// activas ahora mismo, para poder probar ascenso/descenso sin esperar a que
-// termine la semana real. bumpDevWeek() simula que pasó una semana de verdad
-// (si no, el grupo siguiente cae en el mismo weekKey de hoy y recalcula los
-// mismos puntos en vivo de las mismas predicciones, como si no hubiera pasado nada).
-// El orden importa: primero se avanza la semana simulada para que la reinscripción
-// que hace closeExpiredGroups arme los grupos nuevos en el weekKey siguiente.
-export async function closeWeekNow() {
+// Solo panel dev (modo mock): termina los partidos de la fecha actual con un resultado
+// al azar, sincroniza (calcula puntos), y cierra la fecha — para probar ascenso/descenso
+// sin esperar a que se juegue de verdad. Al cerrarse, closeExpiredGroups reinscribe a
+// todos en el grupo de la fecha siguiente.
+export async function closeRoundNow() {
+  if (!isMockMode()) return;
   await connectToDatabase();
-  await bumpDevWeek();
-  await WeeklyLeagueGroupModel.updateMany({ status: "active" }, { closesAt: new Date(0) });
+
+  const roundKey = await getCurrentRoundKey();
+  if (roundKey) {
+    const pending = await MatchModel.find({
+      round: roundKey,
+      status: { $in: ["scheduled", "live"] },
+    });
+    for (const m of pending) {
+      setMockResult(m.externalId, Math.floor(Math.random() * 4), Math.floor(Math.random() * 4));
+    }
+    await syncAllCompetitions();
+  }
+
   await closeExpiredGroups();
-  await runBots(); // que los bots pronostiquen la ventana de la semana nueva
+  await runBots(); // que los bots pronostiquen la ventana de la fecha nueva
   revalidatePath("/liga");
 }
 

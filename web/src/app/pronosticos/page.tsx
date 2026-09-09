@@ -83,12 +83,12 @@ export default async function PronosticosPage() {
   }).lean()) as unknown as LeanPrediction[];
   const predictionByMatch = new Map(predictions.map((p) => [String(p.matchId), p]));
 
-  // Tu posición real dentro de tu grupo de ~20 de la liga semanal — no un ranking global
+  // Tu posición real dentro de tu grupo de ~24 de la liga de la fecha — no un ranking global
   // contra todos los usuarios de la app (esa idea se descartó a propósito, ver
   // docs/product-design.md: un ranking de todo el país desmotiva más de lo que engancha).
   const { group } = await getOrCreateActiveMembership(user._id);
   const tier = group.tier as TierCode;
-  const ranked = await getGroupStanding(group._id, group.weekKey);
+  const ranked = await getGroupStanding(group._id);
   const leaderboard = await Promise.all(
     ranked.map(async (r) => {
       const memberUser = await UserModel.findById(r.membership.userId).select("name isBot");

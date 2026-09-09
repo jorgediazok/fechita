@@ -1,6 +1,6 @@
-// Constantes de categorías de liga semanal, sin dependencias — separado de
+// Constantes de categorías de liga, sin dependencias — separado de
 // lib/leagues.ts (que sí toca modelos/DB) para evitar un import circular con
-// los modelos que necesitan el enum de tier en su schema (User, WeeklyLeagueGroup).
+// los modelos que necesitan el enum de tier en su schema (User, RoundLeagueGroup).
 
 export const TIER_ORDER = ["D", "C", "B", "NACIONAL", "PRIMERA"] as const;
 export type TierCode = (typeof TIER_ORDER)[number];

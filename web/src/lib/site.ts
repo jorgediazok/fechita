@@ -9,4 +9,4 @@ export const SITE_URL = (
 
 export const SITE_NAME = "Cómo Van";
 export const SITE_DESCRIPTION =
-  "Prode de fútbol argentino: pronosticá la fecha, sumá puntos y subí de categoría en la liga semanal contra otros hinchas.";
+  "Prode de fútbol argentino: pronosticá la fecha, sumá puntos y subí de categoría en la liga contra otros hinchas.";

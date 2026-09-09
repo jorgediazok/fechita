@@ -9,7 +9,7 @@ const UserSchema = new Schema({
   // Solo la tienen los usuarios registrados con email/password (Credentials).
   // Los que entran por Google no tienen este campo.
   passwordHash: { type: String },
-  // Categoría de la liga semanal (capa 3). Persiste entre semanas aunque las
+  // Categoría de la liga (capa 3). Persiste entre fechas aunque las
   // ligas en sí se resetean — ver docs/product-design.md.
   currentTier: { type: String, enum: TIER_ORDER, default: "D" },
   // Usuario "bot" para dar vida a las ligas mientras haya pocos jugadores reales:

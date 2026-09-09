@@ -49,7 +49,7 @@ export default async function EliminarCuentaPage() {
 
         <ul className="flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-4 text-[13px] font-bold text-[#B9BCDA]">
           <li>· Todos tus pronósticos y los puntos que sumaste</li>
-          <li>· Tu posición y categoría en la liga semanal</li>
+          <li>· Tu posición y categoría en la liga</li>
           <li>· Tu lugar en los grupos privados a los que pertenecés</li>
           <li>· Tu perfil (nombre, email, club)</li>
         </ul>

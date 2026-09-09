@@ -15,30 +15,22 @@ import {
   getGroupStanding,
   getOrCreateActiveMembership,
   getPendingLeagueResult,
-  getSimulatedNow,
+  getRoundProgress,
   tierCanPromote,
   tierCanRelegate,
   zoneSize,
   type TierCode,
 } from "@/lib/leagues";
-import { closeWeekNow, acknowledgeResult } from "./actions";
+import { closeRoundNow, acknowledgeResult } from "./actions";
 import { isMockMode as runningInMockMode } from "@/lib/api-football/source";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Liga semanal",
+  title: "Liga",
   robots: { index: false, follow: false },
 };
 
 const isMockMode = runningInMockMode();
-
-const daysFormatter = (closesAt: Date, now: number) => {
-  const ms = closesAt.getTime() - now;
-  const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
-  if (days <= 0) return "CIERRA HOY";
-  if (days === 1) return "CIERRA MAÑANA";
-  return `CIERRA EN ${days} DÍAS`;
-};
 
 export default async function LigaPage() {
   const user = await getCurrentUser();
@@ -48,11 +40,11 @@ export default async function LigaPage() {
   await connectToDatabase();
 
   const { group } = await getOrCreateActiveMembership(user._id);
-  const simulatedNow = await getSimulatedNow();
   const tier = group.tier as TierCode;
   const pendingResult = await getPendingLeagueResult(user._id);
+  const roundProgress = await getRoundProgress(group.roundKey);
 
-  const ranked = await getGroupStanding(group._id, group.weekKey);
+  const ranked = await getGroupStanding(group._id);
   const populated = await Promise.all(
     ranked.map(async (r) => {
       const memberUser = await UserModel.findById(r.membership.userId).populate(
@@ -164,7 +156,7 @@ export default async function LigaPage() {
                 className="mb-2.5 px-0.5 text-left text-[10px] font-extrabold tracking-wide"
                 style={{ color: promoted ? "rgba(255,255,255,0.7)" : "#8A8FB2" }}
               >
-                TABLA FINAL · {TIER_FULL_NAMES[pendingResult.oldTier].toUpperCase()}
+                TABLA FINAL · {pendingResult.roundKey.toUpperCase()} · {TIER_FULL_NAMES[pendingResult.oldTier].toUpperCase()}
               </div>
               <div className="flex flex-col gap-1.5">
                 {pendingResult.standings.map((row, i) => {
@@ -234,7 +226,7 @@ export default async function LigaPage() {
               <path d="M15 18l-6-6 6-6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <h1 className="font-display text-lg">LIGA SEMANAL</h1>
+          <h1 className="font-display text-lg">LIGA</h1>
           <div className="w-5" />
         </div>
 
@@ -267,15 +259,29 @@ export default async function LigaPage() {
 
       <div className="relative z-10 mx-5.5 mt-4 flex items-center justify-between rounded-2xl bg-[#15162A] px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.35)]">
         <div className="font-display text-lg text-[#7C5CFF]">{TIER_FULL_NAMES[tier].toUpperCase()}</div>
-        <div className="text-[11px] font-extrabold text-[#9195C2]">{daysFormatter(group.closesAt, simulatedNow)}</div>
+        <div className="text-right">
+          <div className="font-display text-sm text-[#E4E6F7]">{group.roundKey.toUpperCase()}</div>
+          <div className="text-[10px] font-extrabold text-[#9195C2]">
+            {roundProgress.complete
+              ? "FECHA TERMINADA"
+              : roundProgress.done > 0
+                ? `${roundProgress.done}/${roundProgress.total} JUGADOS`
+                : "CIERRA AL TERMINAR LA FECHA"}
+          </div>
+        </div>
       </div>
+
+      <p className="mx-5.5 mt-2.5 text-[11px] font-bold leading-relaxed text-[#8A8FB2]">
+        Cada fecha, los mejores de tu grupo suben de categoría y los últimos bajan. El #1 es el
+        ganador de la fecha.
+      </p>
 
       {isMockMode && (
         <div className="mx-4.5 my-3.5 rounded-2xl border border-dashed border-[#7C5CFF]/50 p-3.5 text-sm">
-          <p className="mb-2 font-bold text-[#B9BCDA]">Panel dev (ligas semanales)</p>
-          <form action={closeWeekNow}>
+          <p className="mb-2 font-bold text-[#B9BCDA]">Panel dev (ligas por fecha)</p>
+          <form action={closeRoundNow}>
             <button type="submit" className="rounded-xl bg-[#1F2038] px-3 py-1.5 text-xs font-bold text-[#9195C2]">
-              Cerrar semana ahora
+              Cerrar fecha ahora
             </button>
           </form>
         </div>
@@ -351,7 +357,7 @@ export default async function LigaPage() {
 
         {populated.length === 1 && myIndex === 0 && (
           <p className="px-1 pt-2 text-xs font-bold text-[#8A8FB2]">
-            Sos el único en tu liga esta semana — hace falta más gente para que haya ascenso/descenso.
+            Sos el único en tu liga esta fecha — hace falta más gente para que haya ascenso/descenso.
           </p>
         )}
       </div>
