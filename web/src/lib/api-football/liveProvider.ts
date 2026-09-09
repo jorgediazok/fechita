@@ -6,13 +6,13 @@ import type { FixtureProvider } from "./provider";
 const BASE_URL = "https://v3.football.api-sports.io";
 
 export const liveFixtureProvider: FixtureProvider = {
-  async getFixtures(leagueId, season) {
+  async getFixtures(seed) {
     const apiKey = process.env.API_FOOTBALL_KEY;
     if (!apiKey) {
-      throw new Error("Falta API_FOOTBALL_KEY para usar API_FOOTBALL_MODE=live");
+      throw new Error("Falta API_FOOTBALL_KEY para usar FIXTURE_SOURCE=api-football");
     }
 
-    const url = `${BASE_URL}/fixtures?league=${leagueId}&season=${season}`;
+    const url = `${BASE_URL}/fixtures?league=${seed.externalId}&season=${seed.season}`;
     const res = await fetch(url, {
       headers: {
         "x-apisports-key": apiKey,
@@ -21,7 +21,7 @@ export const liveFixtureProvider: FixtureProvider = {
     });
 
     if (!res.ok) {
-      throw new Error(`API-Football respondió ${res.status} para league=${leagueId} season=${season}`);
+      throw new Error(`API-Football respondió ${res.status} para league=${seed.externalId} season=${seed.season}`);
     }
 
     const data = (await res.json()) as { response: ApiFixture[] };

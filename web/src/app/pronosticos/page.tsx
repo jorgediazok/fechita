@@ -12,6 +12,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { submitExactScore, runSyncNow, finishMockMatch, resetMockMatch, postponeMockMatch } from "./actions";
 import { DirectionPicker } from "./DirectionPicker";
 import { CompetitionTabs } from "./CompetitionTabs";
+import { isMockMode as runningInMockMode, isReplayMode } from "@/lib/api-football/source";
 import {
   getOrCreateActiveMembership,
   getGroupStanding,
@@ -27,7 +28,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
+const isMockMode = runningInMockMode();
+const replayMode = isReplayMode();
 
 // Una fecha se muestra recién cuando falta poco para su primer partido — el "primer partido"
 // se recalcula en cada sync a partir de los kickoffAt reales, así que si se postergan
@@ -252,6 +254,14 @@ export default async function PronosticosPage() {
             })}
           </div>
         </div>
+      )}
+
+      {/* replay: la temporada 2024 corrida al presente, no fútbol en vivo */}
+      {replayMode && (
+        <p className="mx-4.5 mt-3.5 rounded-xl bg-[#15162A] px-3.5 py-2.5 text-[12px] font-bold leading-relaxed text-[#9195C2]">
+          Temporada de práctica: se juega la Liga Profesional 2024 fecha por fecha. Los partidos
+          y resultados son reales.
+        </p>
       )}
 
       {/* dev panel */}

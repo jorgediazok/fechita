@@ -86,10 +86,10 @@ export function resetMockFixture(fixtureExternalId: number) {
 }
 
 export const mockFixtureProvider: FixtureProvider = {
-  async getFixtures(leagueId, season) {
+  async getFixtures(seed) {
     seedIfNeeded();
     return [...mockFixtures.values()].filter(
-      (fixture) => fixture.league.id === leagueId && fixture.league.season === season
+      (fixture) => fixture.league.id === seed.externalId && fixture.league.season === seed.season
     );
   },
 };

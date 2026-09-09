@@ -31,7 +31,7 @@ export async function syncCompetition(seed: CompetitionSeed): Promise<SyncResult
   );
 
   const provider = getFixtureProvider();
-  const fixtures = await provider.getFixtures(seed.externalId, seed.season);
+  const fixtures = await provider.getFixtures(seed);
 
   let matchesUpserted = 0;
   let predictionsScored = 0;

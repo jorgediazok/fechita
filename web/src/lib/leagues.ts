@@ -5,6 +5,7 @@ import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserModel from "@/models/User";
 import PredictionModel from "@/models/Prediction";
 import DevStateModel from "@/models/DevState";
+import { isMockMode } from "./api-football/source";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -54,7 +55,7 @@ export function getWeekBoundsForKey(weekKey: string) {
 const DEV_STATE_KEY = "singleton";
 
 async function getDevWeekOffsetDays(): Promise<number> {
-  if (process.env.API_FOOTBALL_MODE === "live") return 0;
+  if (!isMockMode()) return 0;
   const state = await DevStateModel.findOne({ key: DEV_STATE_KEY });
   return state?.weekOffsetDays ?? 0;
 }
@@ -70,7 +71,7 @@ export async function bumpDevWeek() {
 
 export async function getSimulatedNow(): Promise<number> {
   const real = Date.now();
-  if (process.env.API_FOOTBALL_MODE === "live") return real;
+  if (!isMockMode()) return real;
   return real + (await getDevWeekOffsetDays()) * DAY_MS;
 }
 

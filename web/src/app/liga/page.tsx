@@ -22,6 +22,7 @@ import {
   type TierCode,
 } from "@/lib/leagues";
 import { closeWeekNow, acknowledgeResult } from "./actions";
+import { isMockMode as runningInMockMode } from "@/lib/api-football/source";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const isMockMode = process.env.API_FOOTBALL_MODE !== "live";
+const isMockMode = runningInMockMode();
 
 const daysFormatter = (closesAt: Date, now: number) => {
   const ms = closesAt.getTime() - now;
