@@ -4,8 +4,8 @@ import type { CompetitionSeed } from "../competitions";
 
 // The Odds API (the-odds-api.com): API de cuotas con endpoints de fixtures y resultados.
 // Free tier: 500 créditos/mes. El endpoint /scores?daysFrom=3 devuelve próximos + en vivo +
-// terminados de los últimos 3 días en una sola llamada (2 créditos) — con el cron cada 6h
-// son ~240 créditos/mes. Cubre `soccer_argentina_primera_division` (temporada actual).
+// terminados de los últimos 3 días en una sola llamada (2 créditos) — con el cron 2×/día
+// (vercel.json) son ~120 créditos/mes. Cubre `soccer_argentina_primera_division`.
 //
 // Lo que NO trae: número de fecha (se sintetiza acá), escudos ni IDs de equipo (se mapean
 // por nombre a IDs de API-Football, abajo). La tabla real de la liga no hace falta — la

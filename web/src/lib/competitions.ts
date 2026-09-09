@@ -24,8 +24,9 @@ export const COMPETITIONS: CompetitionSeed[] = [
     slug: "liga-profesional",
     logoUrl: "",
     theSportsDbLeagueId: 4406,
-    // La fecha que se juega alrededor del 11/09/2026 es la 15 del Torneo Clausura.
-    // Verificá contra promiedos.com.ar y corregí si hace falta.
-    theOddsApiRoundAnchor: { date: "2026-09-11", round: 15 },
+    // La fecha que arranca el 11/09/2026 es la 9. El torneo va hasta la fecha 16 y después
+    // empiezan los playoffs — cuando lleguen, este numerado va a dar "Fecha 17+" y hay que
+    // manejarlo aparte en theoddsapiProvider.
+    theOddsApiRoundAnchor: { date: "2026-09-11", round: 9 },
   },
 ];
