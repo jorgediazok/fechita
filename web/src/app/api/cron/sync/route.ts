@@ -28,11 +28,12 @@ async function decide(): Promise<{ window: FetchWindow | null; reason: string }>
   const state = await DevStateModel.findOne({ key: "singleton" });
   const sinceLast = state?.lastSyncAt ? now - new Date(state.lastSyncAt).getTime() : Infinity;
 
-  // Un partido casi nunca termina antes de los 95 min. La cota de arriba (3h) evita seguir
-  // poleando uno que quedó colgado (suspendido, sin dato) — de eso se encarga la rama "full".
+  // 45 + ~15 entretiempo + 45 + descuento ≈ 108-120 min: antes de los 105 min un partido no
+  // terminó, poleá ahí sería tirar créditos. La cota de arriba (3h) deja de polear uno que
+  // quedó colgado (suspendido, sin dato) — de eso se encarga la rama "full" de abajo.
   const finishing = await MatchModel.exists({
     status: { $in: ["scheduled", "live"] },
-    kickoffAt: { $gte: new Date(now - 3 * HOUR), $lte: new Date(now - 95 * MIN) },
+    kickoffAt: { $gte: new Date(now - 3 * HOUR), $lte: new Date(now - 105 * MIN) },
   });
   if (finishing) return { window: "recent", reason: "partido terminando, buscando resultado" };
 
