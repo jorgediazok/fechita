@@ -1,5 +1,6 @@
 import { getBadge } from "@/lib/badges/catalog";
 import { TIER_FULL_NAMES, type TierCode } from "@/lib/tiers";
+import { SITE_NAME } from "@/lib/site";
 
 export type PushPayload = {
   title: string;
@@ -12,7 +13,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export function testMessage(): PushPayload {
   return {
-    title: "Cómo Van",
+    title: SITE_NAME,
     body: "Listo, las notificaciones están activadas. Te vamos a avisar cuando cierre la fecha y cuando sumes puntos.",
     url: "/pronosticos",
     tag: "test",
