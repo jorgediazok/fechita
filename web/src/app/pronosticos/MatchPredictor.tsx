@@ -41,6 +41,8 @@ export function MatchPredictor({
   const [home, setHome] = useState(initialHome ?? 0);
   const [away, setAway] = useState(initialAway ?? 0);
   const [scoreOn, setScoreOn] = useState(hadScore);
+  // El desplegable del marcador arranca cerrado y se cierra al tocar fuera (como un popover).
+  const [scoreOpen, setScoreOpen] = useState(false);
   // La carga cierra 1 h antes del kickoff. Puro tiempo contra kickoffAt, sin tocar la API.
   const lockAtMs = new Date(kickoffAt).getTime() - PREDICTION_LOCK_LEAD_MS;
   const [locked, setLocked] = useState(() => Date.now() >= lockAtMs);
@@ -140,11 +142,25 @@ export function MatchPredictor({
         })}
       </div>
 
-      <details className="group flex flex-col items-center">
-        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#8A8FB2] [&::-webkit-details-marker]:hidden">
+      <div className="relative flex flex-col items-center">
+        {scoreOpen && (
+          <button
+            type="button"
+            aria-label="Cerrar"
+            tabIndex={-1}
+            onClick={() => setScoreOpen(false)}
+            className="fixed inset-0 z-40 cursor-default"
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setScoreOpen((v) => !v)}
+          aria-expanded={scoreOpen}
+          className="relative z-50 flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#8A8FB2]"
+        >
           {scoreOn ? `MARCADOR: ${home}-${away}` : "¿EXACTO? +5 PTS"}
           <svg
-            className="transition-transform duration-200 group-open:rotate-180"
+            className={`transition-transform duration-200 ${scoreOpen ? "rotate-180" : ""}`}
             width="9"
             height="9"
             viewBox="0 0 24 24"
@@ -152,9 +168,10 @@ export function MatchPredictor({
           >
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </summary>
+        </button>
 
-        <div className="mt-2.5 w-full border-t border-dashed border-[#262844] pt-3">
+        {scoreOpen && (
+        <div className="relative z-50 mt-2.5 w-fit border-t border-dashed border-[#262844] pt-3">
           <div className="flex items-start justify-center gap-4">
             <Stepper
               label={homeShortName}
@@ -183,7 +200,8 @@ export function MatchPredictor({
             </div>
           )}
         </div>
-      </details>
+        )}
+      </div>
     </>
   );
 }

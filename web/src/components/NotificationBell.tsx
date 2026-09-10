@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   fetchNotifications,
@@ -99,9 +100,10 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
+      {open &&
+        createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-4 pt-10 md:items-center"
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5"
           role="dialog"
           aria-modal="true"
           aria-label="Novedades"
@@ -109,7 +111,7 @@ export function NotificationBell() {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="flex max-h-[70vh] w-full max-w-[400px] flex-col rounded-3xl border border-[#262844] bg-[#15162A] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+          <div className="flex max-h-[75vh] w-full max-w-[404px] flex-col overflow-hidden rounded-2xl border border-[#262844] bg-[#15162A] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             <div className="flex items-center justify-between border-b border-[#262844] px-5 py-4">
               <h2 className="font-display text-base text-[#E4E6F7]">NOVEDADES</h2>
               <button
@@ -162,8 +164,9 @@ export function NotificationBell() {
               )}
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.getElementById("phone-frame") ?? document.body
+        )}
     </>
   );
 }

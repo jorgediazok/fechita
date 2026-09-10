@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Chip de racha del hero de /pronosticos + modal que explica qué es y cómo se consigue.
 // La regla real vive en lib/badges/award.ts (`currentRoundStreak`): una fecha suma si
@@ -45,9 +46,10 @@ export function StreakInfo({ streak, atRisk }: { streak: number; atRisk: boolean
         <span className="font-display text-[13px] leading-none text-[#F5F5FF]">{streak}</span>
       </button>
 
-      {open && (
+      {open &&
+        createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-4 pt-10 md:items-center"
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5"
           role="dialog"
           aria-modal="true"
           aria-label="Tu racha"
@@ -55,7 +57,7 @@ export function StreakInfo({ streak, atRisk }: { streak: number; atRisk: boolean
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="w-full max-w-[400px] rounded-3xl border border-[#262844] bg-[#15162A] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+          <div className="w-full max-w-[404px] rounded-2xl border border-[#262844] bg-[#15162A] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             <div className="flex items-center gap-3">
               <span
                 className="flex h-11 w-11 items-center justify-center rounded-2xl"
@@ -106,8 +108,9 @@ export function StreakInfo({ streak, atRisk }: { streak: number; atRisk: boolean
               Entendido
             </button>
           </div>
-        </div>
-      )}
+        </div>,
+          document.getElementById("phone-frame") ?? document.body
+        )}
     </>
   );
 }

@@ -18,6 +18,7 @@ export function PhoneFrame({
         Saltar al contenido
       </a>
       <div
+        id="phone-frame"
         className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden text-white md:h-[min(844px,calc(100vh-5rem))] md:rounded-[36px] md:shadow-[0_30px_80px_rgba(0,0,0,0.6)] md:ring-1 md:ring-white/10"
         style={{
           backgroundColor: "#0B0C16",
