@@ -20,6 +20,7 @@ import {
 import { MatchPredictor } from "./MatchPredictor";
 import { PushNudge } from "@/components/PushClient";
 import { NotificationBell } from "@/components/NotificationBell";
+import { StreakInfo } from "@/components/StreakInfo";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
 import { StreakCelebration } from "@/components/StreakCelebration";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
@@ -228,33 +229,7 @@ export default async function PronosticosPage({
           }}
         >
           <div className="flex items-center justify-between gap-2 text-[#F5F5FF]">
-            <span className="min-w-0 truncate text-[11px] font-extrabold tracking-wide">
-              {user.name.toUpperCase()} · {totalPoints} PTS
-            </span>
-            <div
-              className="flex items-center gap-1 rounded-full py-1 pl-1.5 pr-2.5"
-              style={{
-                background: streakAtRisk
-                  ? "rgba(255,255,255,0.14)"
-                  : streak > 0
-                    ? "rgba(255,122,61,0.28)"
-                    : "rgba(255,255,255,0.10)",
-              }}
-              aria-label={
-                streak > 0
-                  ? `Racha de ${streak} fecha${streak === 1 ? "" : "s"}${streakAtRisk ? ", en juego" : ""}`
-                  : "Sin racha"
-              }
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 2c1.1 3.1-1.6 4.7-1.6 7.4 0 1.4 1 2.3 1 2.3s2.7-2.1 2.2-4.8c2.1 2.1 3.7 4.8 3.7 7.8A5.3 5.3 0 0 1 6.7 15C6.7 10.3 11 8.1 12 2z"
-                  fill={streak > 0 && !streakAtRisk ? "#FF9D5C" : "#F5F5FF"}
-                  fillOpacity={streak > 0 ? 1 : 0.5}
-                />
-              </svg>
-              <span className="font-display text-[13px] leading-none">{streak}</span>
-            </div>
+            <StreakInfo streak={streak} atRisk={streakAtRisk} />
             <NotificationBell />
           </div>
 
@@ -280,9 +255,12 @@ export default async function PronosticosPage({
                   <div className="absolute right-0 top-0 h-full rounded-r-full bg-[#FF2D95]/40" style={{ width: `${descentPct}%` }} />
                 )}
                 <div
-                  className="absolute -top-[5px] h-5 w-5 rounded-full border-[3px] border-white bg-[#0B0C16] shadow-[0_0_0_4px_rgba(11,12,22,0.3)]"
+                  className="absolute -top-[8px] flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white text-[15px] leading-none shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
                   style={{ left: `${positionPct}%`, transform: "translateX(-50%)" }}
-                />
+                  aria-hidden="true"
+                >
+                  ⚽
+                </div>
               </div>
               {(canPromote || canRelegate) && (
                 <div className="mt-1 flex justify-between text-[9px] font-extrabold tracking-wide text-[#F5F5FF]/50">
