@@ -6,8 +6,29 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    // Toda la lógica bajo test es pura (sin DOM ni DB) — entorno node, rápido.
-    environment: "node",
-    include: ["src/**/*.test.ts"],
+    projects: [
+      {
+        resolve: { tsconfigPaths: true },
+        test: {
+          name: "unit",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/**/*.integration.test.ts"],
+        },
+      },
+      {
+        resolve: { tsconfigPaths: true },
+        test: {
+          name: "integration",
+          environment: "node",
+          include: ["src/**/*.integration.test.ts"],
+          setupFiles: ["./test/setup-integration.ts"],
+          // La primera corrida baja el binario de mongod (~mongodb-memory-server).
+          hookTimeout: 120_000,
+          // Mongoose + un único servidor en memoria compartido: sin paralelismo entre archivos.
+          fileParallelism: false,
+        },
+      },
+    ],
   },
 });
