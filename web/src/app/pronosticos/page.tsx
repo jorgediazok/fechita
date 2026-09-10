@@ -98,38 +98,50 @@ export default async function PronosticosPage({
 
   await connectToDatabase();
 
-  const matches = (await MatchModel.find({})
-    .sort({ kickoffAt: 1 })
-    .populate("homeTeamId", "name shortName logoUrl")
-    .populate("awayTeamId", "name shortName logoUrl")
-    .lean()) as unknown as PopulatedMatch[];
+  // Todo lo de abajo es independiente entre sí — se pedía en serie (~35 round-trips a Atlas,
+  // ~3 s). En paralelo, la ruta crítica pasa a ser la cadena de liga (membresía → tabla).
+  const [matches, predictions, leagueData, unseenBadges, streak] = await Promise.all([
+    MatchModel.find({})
+      .sort({ kickoffAt: 1 })
+      .populate("homeTeamId", "name shortName logoUrl")
+      .populate("awayTeamId", "name shortName logoUrl")
+      .lean() as unknown as Promise<PopulatedMatch[]>,
 
-  const predictions = (await PredictionModel.find({
-    userId: user._id,
-    matchId: { $in: matches.map((m) => m._id) },
-  }).lean()) as unknown as LeanPrediction[];
+    PredictionModel.find({ userId: user._id }).lean() as unknown as Promise<LeanPrediction[]>,
+
+    // Tu posición real dentro de tu grupo de ~24 de la liga de la fecha (no un ranking global,
+    // ver docs/product-design.md). membresía → tabla → nombres de los miembros.
+    (async () => {
+      const { group } = await getOrCreateActiveMembership(user._id);
+      const ranked = await getGroupStanding(group._id);
+      const members = (await UserModel.find({ _id: { $in: ranked.map((r) => r.membership.userId) } })
+        .select("name isBot")
+        .lean()) as unknown as { _id: unknown; name: string; isBot?: boolean }[];
+      return { group, ranked, members };
+    })(),
+
+    // Recalcular insignias al entrar (además de en el sync y el cierre de fecha) garantiza que
+    // el festejo aparezca sí o sí la próxima vez que el usuario abre la app.
+    (async () => {
+      await evaluateBadgesForUser(user._id);
+      return (await getUnseenBadges(user._id)).map((b) => ({
+        id: b.id,
+        name: b.name,
+        rarity: b.rarity,
+        flavor: b.flavor,
+        criterio: b.criterio,
+      }));
+    })(),
+
+    // Racha de fechas (misma que las insignias de fuego).
+    currentRoundStreak(user._id),
+  ]);
+
+  const { group, ranked, members: memberUsers } = leagueData;
+  const tier = group.tier as TierCode;
   const predictionByMatch = new Map(predictions.map((p) => [String(p.matchId), p]));
 
-  // Tu posición real dentro de tu grupo de ~24 de la liga de la fecha — no un ranking global
-  // contra todos los usuarios de la app (esa idea se descartó a propósito, ver
-  // docs/product-design.md: un ranking de todo el país desmotiva más de lo que engancha).
-  const { group } = await getOrCreateActiveMembership(user._id);
-  const tier = group.tier as TierCode;
-
-  // Recalcular insignias al entrar (además de en el sync y el cierre de fecha) garantiza
-  // que el festejo aparezca sí o sí la próxima vez que el usuario abre la app.
-  await evaluateBadgesForUser(user._id);
-  const unseenBadges = (await getUnseenBadges(user._id)).map((b) => ({
-    id: b.id,
-    name: b.name,
-    rarity: b.rarity,
-    flavor: b.flavor,
-    criterio: b.criterio,
-  }));
-
-  // Racha de fechas (misma que las insignias de fuego). El festejo de racha cede el paso al
-  // de insignias — si hay una insignia sin ver, esta se muestra después.
-  const streak = await currentRoundStreak(user._id);
+  // El festejo de racha cede el paso al de insignias — si hay una insignia sin ver, va después.
   const pendingStreak = unseenBadges.length === 0 ? await getPendingStreak(user._id) : null;
 
   // "En juego": tenés racha pero todavía no cargaste los 3 pronósticos mínimos de la fecha
@@ -140,13 +152,6 @@ export default async function PronosticosPage({
   ).length;
   const streakAtRisk =
     streak > 0 && predictedInRound < Math.min(3, currentRoundMatches.length);
-
-  const ranked = await getGroupStanding(group._id);
-  const memberUsers = (await UserModel.find({
-    _id: { $in: ranked.map((r) => r.membership.userId) },
-  })
-    .select("name isBot")
-    .lean()) as unknown as { _id: unknown; name: string; isBot?: boolean }[];
   const memberById = new Map(memberUsers.map((u) => [String(u._id), u]));
   const leaderboard = ranked.map((r) => {
     const memberUser = memberById.get(String(r.membership.userId));

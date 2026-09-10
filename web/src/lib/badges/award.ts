@@ -135,37 +135,51 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
   const has = (group: string) => pending.some((b) => b.group === group);
   const newly: string[] = [];
 
+  // Todos los criterios que pegan a la DB, en paralelo (antes eran ~7 consultas en serie, la
+  // parte más lenta de abrir /pronosticos).
+  const [hitCount, rachaStreak, exactCount, wonRound, superclasico, sorpresa] = await Promise.all([
+    has("aciertos")
+      ? PredictionModel.countDocuments({ userId: user._id, points: HIT })
+      : Promise.resolve(0),
+    has("rachas") ? currentRoundStreak(user._id) : Promise.resolve(0),
+    has("exactos")
+      ? PredictionModel.countDocuments({ userId: user._id, points: 5 })
+      : Promise.resolve(0),
+    !earned.has("ganador")
+      ? LeagueMembershipModel.exists({ userId: user._id, wonRound: true })
+      : Promise.resolve(null),
+    !earned.has("superclasico") ? wonASuperclasico(user._id) : Promise.resolve(false),
+    !earned.has("sorpresa") ? calledASurprise(user._id) : Promise.resolve(false),
+  ]);
+
   if (has("aciertos")) {
-    const count = await PredictionModel.countDocuments({ userId: user._id, points: HIT });
     for (const [id, threshold] of [
       ["debut", 10],
       ["pulso", 50],
       ["ojo", 100],
       ["fenomeno", 500],
     ] as const) {
-      if (!earned.has(id) && count >= threshold) newly.push(id);
+      if (!earned.has(id) && hitCount >= threshold) newly.push(id);
     }
   }
 
   if (has("rachas")) {
-    const streak = await currentRoundStreak(user._id);
     for (const [id, n] of [
       ["enracha", 3],
       ["imparable", 5],
       ["elegido", 8],
     ] as const) {
-      if (!earned.has(id) && streak >= n) newly.push(id);
+      if (!earned.has(id) && rachaStreak >= n) newly.push(id);
     }
   }
 
   if (has("exactos")) {
-    const exacts = await PredictionModel.countDocuments({ userId: user._id, points: 5 });
     for (const [id, n] of [
       ["cinco", 1],
       ["adivino", 10],
       ["brujo", 25],
     ] as const) {
-      if (!earned.has(id) && exacts >= n) newly.push(id);
+      if (!earned.has(id) && exactCount >= n) newly.push(id);
     }
   }
 
@@ -181,15 +195,9 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
     }
   }
 
-  if (!earned.has("ganador") && (await LeagueMembershipModel.exists({ userId: user._id, wonRound: true }))) {
-    newly.push("ganador");
-  }
-  if (!earned.has("superclasico") && (await wonASuperclasico(user._id))) {
-    newly.push("superclasico");
-  }
-  if (!earned.has("sorpresa") && (await calledASurprise(user._id))) {
-    newly.push("sorpresa");
-  }
+  if (!earned.has("ganador") && wonRound) newly.push("ganador");
+  if (!earned.has("superclasico") && superclasico) newly.push("superclasico");
+  if (!earned.has("sorpresa") && sorpresa) newly.push("sorpresa");
 
   // Colección completa — última, cuenta también lo recién ganado en esta corrida.
   if (!earned.has(META_BADGE_ID)) {
