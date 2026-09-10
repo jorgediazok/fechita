@@ -11,19 +11,15 @@
 #   CRON_SECRET  → el mismo valor que la env var CRON_SECRET del deploy
 name: sync-partidos
 
-# DESACTIVADO hasta el deploy. Para activarlo:
-#   1. Deployar web/ (Vercel) con sus env vars.
-#   2. Repo → Settings → Secrets and variables → Actions:
-#        SYNC_URL     = https://<tu-dominio>/api/cron/sync
-#        CRON_SECRET  = el mismo valor que la env var CRON_SECRET del deploy
-#   3. Descomentar el bloque `schedule` de abajo.
+# ACTIVO desde 2026-09-10 (deploy en fechita.vercel.app). Necesita los secrets SYNC_URL y
+# CRON_SECRET cargados en Settings → Secrets and variables → Actions.
 #
 # Cada 10 min: resultados frescos a los ~10-15 min del final, ~260 créditos/mes de The Odds
 # API. Bajá a "*/5" para ~5-10 min de latencia (~410 créditos/mes) si te sobra presupuesto.
 # Alternativa más confiable que GitHub Actions: cron-job.org (misma URL + header Bearer).
 on:
-  # schedule:
-  #   - cron: "*/10 * * * *"
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 concurrency:
