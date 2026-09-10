@@ -301,9 +301,9 @@ datos no requiere re-mapear.
 
 ## Tests
 
-**Vitest** (`npm test`), colocados como `src/**/*.test.ts`. Cubren la **lógica pura del
-juego** — la parte que define si el proyecto "funciona bien", sin depender de la DB ni del
-navegador:
+**Vitest** — `npm test` (todo) · `npm run test:watch`. Dos proyectos:
+
+### `unit` — lógica pura (`src/**/*.test.ts`), entorno node, sin DB
 
 | Archivo | Qué verifica |
 |---|---|
@@ -314,11 +314,20 @@ navegador:
 | `lib/bots/strategy.test.ts` | Determinismo del RNG por `(bot, partido)`, efecto del `skill`, probabilidades bien formadas |
 | `lib/push/messages.test.ts` | El copy de cada notificación según el evento |
 
-Para poder testearlas aisladas, la matemática de zonas se separó a `lib/leagueZones.ts`
-(mismo criterio que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
+Para testear la matemática de zonas aislada se separó a `lib/leagueZones.ts` (mismo criterio
+que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
 
-Pendiente: tests de integración de `closeGroup` / `evaluateBadgesForUser` con
-`mongodb-memory-server`, y un E2E del loop central (Playwright).
+### `integration` — lógica que toca la base (`src/**/*.integration.test.ts`)
+
+Contra una **MongoDB en memoria** (`mongodb-memory-server`, `test/setup-integration.ts`) —
+no toca ninguna base real. Fixtures en `test/factories.ts`.
+
+| Archivo | Qué verifica |
+|---|---|
+| `lib/leagues.integration.test.ts` | `closeExpiredGroups`: ascenso del top ~25% y descenso del bottom ~25%, `wonRound` solo del #1, sin ascenso desde PRIMERA ni descenso desde D, reinscripción en la fecha siguiente con el tier actualizado, orden de `getGroupStanding` |
+| `lib/badges/streak.integration.test.ts` | `currentRoundStreak`: la regla de ≥3 pronósticos y +50% de aciertos por fecha, el corte en la primera fecha que falla, "la mitad justa no alcanza" |
+
+Pendiente: E2E del loop central (Playwright), y más integración de `evaluateBadgesForUser`.
 
 ---
 
