@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { Types } from "mongoose";
 import { connectToDatabase } from "./db";
 import RoundLeagueGroupModel from "@/models/RoundLeagueGroup";
@@ -31,7 +32,9 @@ const MAX_GROUP_SIZE = 24;
 
 type RoundInfo = { roundKey: string; first: Date; last: Date; total: number; done: number };
 
-async function getRoundsInOrder(): Promise<RoundInfo[]> {
+// El aggregate sobre todos los partidos se repite 2-3 veces por render (closeExpiredGroups,
+// getCurrentRoundKey, getRoundProgress). cache() lo colapsa a una sola corrida por request.
+const getRoundsInOrder = cache(async function getRoundsInOrder(): Promise<RoundInfo[]> {
   const rows = await MatchModel.aggregate<{
     _id: string;
     first: Date;
@@ -51,7 +54,7 @@ async function getRoundsInOrder(): Promise<RoundInfo[]> {
     { $sort: { first: 1 } },
   ]);
   return rows.map((r) => ({ roundKey: r._id, first: r.first, last: r.last, total: r.total, done: r.done }));
-}
+});
 
 // La fecha "actual" para inscribir: la primera (por kickoff) que todavía tiene partidos por
 // jugar y no tiene un grupo cerrado. Una fecha ya terminada nunca es "la actual" (si no,
@@ -276,45 +279,54 @@ export async function enrollUserForCurrentRound(userId: Types.ObjectId | string)
   const user = await UserModel.findById(userId);
   if (!user) throw new Error("Usuario no encontrado");
 
+  const tier = (user.currentTier ?? "D") as TierCode;
+
+  // Camino rápido (el 99% de las visitas): si ya estás en un grupo activo de tu categoría, ese
+  // es el de la fecha actual — closeExpiredGroups ya reinscribió cualquier membresía vencida.
+  // Evita el aggregate de getCurrentRoundKey en cada carga de /liga y /pronosticos.
+  const activeGroups = await RoundLeagueGroupModel.find({ tier, status: "active" });
+  if (activeGroups.length) {
+    const current = await LeagueMembershipModel.findOne({
+      groupId: { $in: activeGroups.map((g) => g._id) },
+      userId: user._id,
+    });
+    if (current) {
+      const g = activeGroups.find((x) => String(x._id) === String(current.groupId))!;
+      return { group: g, membership: current, user };
+    }
+  }
+
+  // Camino completo: no estás inscripto (usuario nuevo o recién ascendido/descendido).
   const roundKey = await getCurrentRoundKey();
   if (!roundKey) throw new Error("No hay fechas cargadas todavía — sincronizá partidos");
 
-  const tier = (user.currentTier ?? "D") as TierCode;
-  const groups = await RoundLeagueGroupModel.find({ roundKey, tier, status: "active" });
+  const groups = activeGroups.filter((g) => g.roundKey === roundKey);
 
-  let membership = groups.length
-    ? await LeagueMembershipModel.findOne({ groupId: { $in: groups.map((g) => g._id) }, userId: user._id })
-    : null;
-  let group = membership
-    ? groups.find((g) => String(g._id) === String(membership!.groupId)) ?? null
-    : null;
-
-  if (!membership) {
-    for (const g of groups) {
-      if ((await LeagueMembershipModel.countDocuments({ groupId: g._id })) < MAX_GROUP_SIZE) {
-        group = g;
-        break;
-      }
+  let group: InstanceType<typeof RoundLeagueGroupModel> | null = null;
+  for (const g of groups) {
+    if ((await LeagueMembershipModel.countDocuments({ groupId: g._id })) < MAX_GROUP_SIZE) {
+      group = g;
+      break;
     }
-    if (!group) {
-      const bounds = await getRoundBounds(roundKey);
-      const lastMs = bounds?.last.getTime() ?? Date.now() + 3 * DAY_MS;
-      group = await RoundLeagueGroupModel.create({
-        roundKey,
-        tier,
-        closesAt: new Date(lastMs + DAY_MS),
-        status: "active",
-      });
-    }
-    membership = await LeagueMembershipModel.create({
-      groupId: group._id,
-      userId: user._id,
-      points: 0,
-      result: null,
+  }
+  if (!group) {
+    const bounds = await getRoundBounds(roundKey);
+    const lastMs = bounds?.last.getTime() ?? Date.now() + 3 * DAY_MS;
+    group = await RoundLeagueGroupModel.create({
+      roundKey,
+      tier,
+      closesAt: new Date(lastMs + DAY_MS),
+      status: "active",
     });
   }
+  const membership = await LeagueMembershipModel.create({
+    groupId: group._id,
+    userId: user._id,
+    points: 0,
+    result: null,
+  });
 
-  return { group: group!, membership, user };
+  return { group, membership, user };
 }
 
 export async function getOrCreateActiveMembership(userId: Types.ObjectId | string) {

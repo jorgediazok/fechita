@@ -4,6 +4,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { PREDICTION_LOCK_LEAD_MS } from "@/lib/time";
 import { clearExactScore, submitDirection, submitExactScore } from "./actions";
 
+// Marcador "semilla" al abrir el menú de resultado exacto: acorde a la ficha 1-X-2 para no
+// pisarla (0-0 si empate o sin elegir, 1-0 si local, 0-1 si visitante).
+const seedFor = (dir: Direction | null): [number, number] =>
+  dir === "home" ? [1, 0] : dir === "away" ? [0, 1] : [0, 0];
+
 type Direction = "home" | "draw" | "away";
 
 const DIR_LABELS: Record<Direction, string> = { home: "L", draw: "E", away: "V" };
@@ -85,15 +90,46 @@ export function MatchPredictor({
     });
   }
 
+  // Fija el marcador semilla acorde a la ficha y lo guarda ya (sin debounce): "abrir el menú
+  // cuenta" aunque el usuario no toque nada ni cierre el desplegable.
+  function applySeed(dir: Direction | null) {
+    const [h, a] = seedFor(dir);
+    setScoreOn(true);
+    setHome(h);
+    setAway(a);
+    setDirection(dirFromScore(h, a));
+    cancelSave();
+    save(() => submitExactScore(matchId, h, a));
+  }
+
+  function toggleScoreMenu() {
+    const opening = !scoreOpen;
+    setScoreOpen(opening);
+    if (opening && !scoreOn) applySeed(direction);
+  }
+
   function pickDirection(dir: Direction) {
     setDirection(dir);
-    // Si venía con marcador exacto y ahora contradice la ficha, lo soltamos.
-    if (scoreOn && dirFromScore(home, away) !== dir) {
+    const contradicts = scoreOn && dirFromScore(home, away) !== dir;
+
+    // Con el menú abierto, re-sembramos acorde a la nueva ficha en vez de dejar "– –".
+    if (contradicts && scoreOpen) {
+      applySeed(dir);
+      return;
+    }
+    // Con el menú cerrado, soltamos el marcador exacto — en cliente y en server.
+    if (contradicts) {
       cancelSave();
       setScoreOn(false);
       setHome(0);
       setAway(0);
+      save(async () => {
+        await submitDirection(matchId, dir);
+        await clearExactScore(matchId);
+      });
+      return;
     }
+
     save(() => submitDirection(matchId, dir));
   }
 
@@ -120,7 +156,9 @@ export function MatchPredictor({
 
   return (
     <>
-      <div className="flex items-center gap-2" role="group" aria-label="Tu pronóstico">
+      {/* z-50: por encima del overlay de cierre del menú (z-40), si no el primer tap acá lo
+          come el overlay y hay que tocar dos veces para cambiar la ficha. */}
+      <div className="relative z-50 flex items-center gap-2" role="group" aria-label="Tu pronóstico">
         {(["home", "draw", "away"] as const).map((dir) => {
           const selected = direction === dir;
           return (
@@ -154,7 +192,7 @@ export function MatchPredictor({
         )}
         <button
           type="button"
-          onClick={() => setScoreOpen((v) => !v)}
+          onClick={toggleScoreMenu}
           aria-expanded={scoreOpen}
           className="relative z-50 flex w-fit cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-[#3A3D5C] px-3 py-1.5 text-[11px] font-extrabold text-[#8A8FB2]"
         >

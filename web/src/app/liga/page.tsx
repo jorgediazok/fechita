@@ -41,10 +41,14 @@ export default async function LigaPage() {
 
   const { group } = await getOrCreateActiveMembership(user._id);
   const tier = group.tier as TierCode;
-  const pendingResult = await getPendingLeagueResult(user._id);
-  const roundProgress = await getRoundProgress(group.roundKey);
 
-  const ranked = await getGroupStanding(group._id);
+  // Independientes entre sí una vez que tenemos el grupo — en serie eran ~10 round-trips.
+  const [pendingResult, roundProgress, ranked] = await Promise.all([
+    getPendingLeagueResult(user._id),
+    getRoundProgress(group.roundKey),
+    getGroupStanding(group._id),
+  ]);
+
   const memberUsers = await UserModel.find({
     _id: { $in: ranked.map((r) => r.membership.userId) },
   }).populate("favoriteTeamId", "name shortName logoUrl");
