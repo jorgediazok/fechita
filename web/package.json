@@ -11,8 +11,7 @@
     "test:watch": "vitest",
     "seed": "node --env-file=.env.local --import tsx scripts/seed-leagues.ts",
     "seed:clean": "node --env-file=.env.local --import tsx scripts/seed-leagues.ts --clean-only",
-    "seed:bots": "node --env-file=.env.local --import tsx scripts/seed-bots.ts",
-    "fetch-season": "node --env-file=.env.local --import tsx scripts/fetch-season.ts"
+    "seed:bots": "node --env-file=.env.local --import tsx scripts/seed-bots.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

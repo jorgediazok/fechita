@@ -6,7 +6,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { BottomNav } from "@/components/BottomNav";
 import { BadgeShowcase } from "@/components/BadgeShowcase";
 import { getBadgeShowcase } from "@/lib/badges";
-import { isMockMode as runningInMockMode } from "@/lib/api-football/source";
+import { isMockMode as runningInMockMode } from "@/lib/fixtures/source";
 import { devReevaluateBadges, devResetBadges, devSimulateBadge } from "./actions";
 
 export const metadata: Metadata = {

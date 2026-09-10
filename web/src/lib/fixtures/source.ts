@@ -1,0 +1,23 @@
+// De dónde salen los partidos. Se elige con FIXTURE_SOURCE en .env.local:
+//   - "mock"       → fixtures simulados, sin red (default; habilita el panel dev de /pronosticos y /liga)
+//   - "theoddsapi" → The Odds API, free tier, temporada argentina actual real (la que va a prod)
+//   - "replay"     → temporada real 2024 (JSON congelado en ./data/) corrida al presente, sin red
+export type FixtureSource = "mock" | "theoddsapi" | "replay";
+
+export function getFixtureSource(): FixtureSource {
+  const raw = process.env.FIXTURE_SOURCE;
+  if (raw === "theoddsapi") return "theoddsapi";
+  if (raw === "replay") return "replay";
+  return "mock";
+}
+
+// El panel dev (simular resultados, cerrar la fecha a mano) solo tiene sentido con datos
+// totalmente simulados.
+export function isMockMode(): boolean {
+  return getFixtureSource() === "mock";
+}
+
+// El modo replay muestra fútbol de 2024, no en vivo: la UI lo aclara con un cartel.
+export function isReplayMode(): boolean {
+  return getFixtureSource() === "replay";
+}

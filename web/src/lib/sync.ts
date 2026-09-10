@@ -1,6 +1,6 @@
 import { connectToDatabase } from "./db";
-import { getFixtureProvider, mapApiStatus, type ApiFixture } from "./api-football";
-import type { FetchWindow } from "./api-football/provider";
+import { getFixtureProvider, mapApiStatus, type ApiFixture } from "./fixtures";
+import type { FetchWindow } from "./fixtures/provider";
 import { COMPETITIONS, type CompetitionSeed } from "./competitions";
 import { calculatePoints } from "./points";
 import { evaluateBadgesForUsers } from "./badges/award";

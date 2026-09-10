@@ -1,6 +1,6 @@
 // Fuerza aproximada por club (1-100), tosca y a ojo, solo para que los bots pronostiquen
 // con algún criterio (favorito/local) en vez de tirar 1-X-2 al azar. Clave = externalId de
-// API-Football (los mismos ids reales que usa el mock, ver src/lib/api-football/mockProvider).
+// API-Football (los mismos ids reales que usa el mock, ver src/lib/fixtures/mockProvider).
 // No pretende ser exacta ni actualizarse por fecha; si un club no está, se usa DEFAULT.
 export const TEAM_STRENGTH: Record<number, number> = {
   435: 85, // River Plate

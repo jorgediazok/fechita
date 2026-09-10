@@ -4,9 +4,9 @@ import { connectToDatabase } from "../db";
 import DevStateModel from "@/models/DevState";
 import seasonData from "./data/liga-profesional-2024.json";
 
-// Modo replay: una temporada real ya jugada (Liga Profesional 2024, bajada con
-// `npm run fetch-season`) corrida al presente. Datos, equipos e IDs reales, sin costo y sin
-// llamadas a la API en runtime — el JSON está congelado, los resultados no cambian.
+// Modo replay: una temporada real ya jugada (Liga Profesional 2024) corrida al presente.
+// El JSON `./data/liga-profesional-2024.json` está congelado en el repo — datos, equipos e
+// IDs reales, sin costo y sin llamadas a ninguna API en runtime; los resultados no cambian.
 //
 // - El corrimiento se ancla la primera vez que corre un sync en modo replay (DevState.
 //   replayStartedAt) y no se vuelve a mover: la temporada avanza al ritmo real (~1 fecha

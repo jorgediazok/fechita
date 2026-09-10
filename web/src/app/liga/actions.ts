@@ -5,8 +5,8 @@ import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import { closeExpiredGroups, acknowledgeLeagueResult, getCurrentRoundKey } from "@/lib/leagues";
 import { syncAllCompetitions } from "@/lib/sync";
-import { setMockResult } from "@/lib/api-football";
-import { isMockMode } from "@/lib/api-football/source";
+import { setMockResult } from "@/lib/fixtures";
+import { isMockMode } from "@/lib/fixtures/source";
 import { runBots } from "@/lib/bots";
 
 // Solo panel dev (modo mock): termina los partidos de la fecha actual con un resultado

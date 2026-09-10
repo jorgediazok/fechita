@@ -2,11 +2,10 @@ import type { ApiFixture } from "./types";
 import type { FixtureProvider } from "./provider";
 import seedFixtures from "./data/liga-profesional-fechas-1-3.json";
 
-// Partidos reales de Liga Profesional Argentina (fechas 1-3 de la temporada 2024, sacados
-// de API-Football en modo live) reutilizados como datos de prueba: mismos equipos y misma
-// separación entre fechas, pero con las fechas corridas al futuro para poder cargar
-// pronósticos antes del kickoff. externalId, homeTeam.id, awayTeam.id SÍ son ids reales de
-// API-Football, así que al pasar a API_FOOTBALL_MODE=live no hace falta remapear nada de eso.
+// Partidos reales de Liga Profesional Argentina (fechas 1-3 de la temporada 2024) reutilizados
+// como datos de prueba: mismos equipos y misma separación entre fechas, pero corridas al
+// futuro para poder cargar pronósticos antes del kickoff. externalId, homeTeam.id y
+// awayTeam.id son los ids canónicos de API-Football que usa toda la app.
 const MOCK_LEAGUE_ID = 999;
 const MOCK_SEASON = 2026;
 
