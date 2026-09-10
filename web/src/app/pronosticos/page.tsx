@@ -18,6 +18,7 @@ import {
   dismissStreak,
 } from "./actions";
 import { MatchPredictor } from "./MatchPredictor";
+import { RoundProgress } from "./RoundProgress";
 import { PushNudge } from "@/components/PushClient";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
@@ -376,11 +377,22 @@ export default async function PronosticosPage({
       <CompetitionTabs>
       {/* feed */}
       <div className="flex flex-col gap-3.5 px-4.5 pb-6">
-        {visibleRounds.map(([round, roundMatches]) => (
+        {visibleRounds.map(([round, roundMatches]) => {
+          const isCurrentRound = round === group.roundKey;
+          const roundHasPending = roundMatches.some((m) => m.status !== "finished");
+          return (
           <div key={round} className="flex flex-col gap-2.5">
             <div className="text-xs font-extrabold tracking-wide text-[#8A8FB2]">
               {roundMatches.every((m) => m.status === "finished") ? "RESULTADOS" : "PENDIENTES"} · {round.toUpperCase()}
             </div>
+
+            {isCurrentRound && roundHasPending && (
+              <RoundProgress
+                roundKey={round}
+                predicted={predictedInRound}
+                total={currentRoundMatches.length}
+              />
+            )}
 
             {roundMatches.map((match) => {
               const prediction = predictionByMatch.get(String(match._id));
@@ -422,7 +434,22 @@ export default async function PronosticosPage({
               }
 
               return (
-                <div key={String(match._id)} className="flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-3.5">
+                <div
+                  key={String(match._id)}
+                  className={`relative flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-3.5 ${
+                    prediction?.predictedDirection ? "ring-1 ring-[#4FD17F]/25" : ""
+                  }`}
+                >
+                  {prediction?.predictedDirection && (
+                    <span
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#4FD17F] text-[#0B0C16]"
+                      aria-label="Pronóstico cargado"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
                   <div className="flex items-center gap-2.5">
                     <TeamBadge team={match.homeTeamId} />
                     <div className="flex-1 text-xs font-extrabold text-[#B9BCDA]">
@@ -486,7 +513,8 @@ export default async function PronosticosPage({
               );
             })}
           </div>
-        ))}
+          );
+        })}
 
         {matches.length === 0 && (
           <p className="text-sm text-[#8A8FB2]">
