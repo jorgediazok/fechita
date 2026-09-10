@@ -48,25 +48,31 @@ export async function sendToUser(
   payload: PushPayload,
   dedupe?: DedupeOpts
 ): Promise<void> {
-  if (!isPushConfigured()) return;
-  ensureWebPushConfigured();
-
   try {
     await connectToDatabase();
 
+    // Con `dedupe`, la fila de NotificationLog ES la notificación in-app (la campanita).
+    // Se escribe siempre, tenga o no configurado el push. Si rebota el índice único, ya
+    // se notificó (in-app y push) y no hay nada más que hacer.
     if (dedupe) {
       try {
         await NotificationLogModel.create({
           userId,
           kind: dedupe.kind,
           dedupeKey: dedupe.dedupeKey,
+          title: payload.title,
+          body: payload.body,
+          url: payload.url,
         });
       } catch (err: unknown) {
-        // 11000 = clave duplicada → ya se mandó esta notificación, saltear.
         if ((err as { code?: number })?.code === 11000) return;
         throw err;
       }
     }
+
+    // El push del SO es la capa opcional encima del feed in-app.
+    if (!isPushConfigured()) return;
+    ensureWebPushConfigured();
 
     const subs = await PushSubscriptionModel.find({ userId });
     if (subs.length === 0) return;
