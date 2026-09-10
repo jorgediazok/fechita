@@ -9,7 +9,7 @@ import { PREDICTION_DIRECTIONS } from "@/models/Prediction";
 import { getCurrentUser } from "@/lib/session";
 import { syncAllCompetitions } from "@/lib/sync";
 import { runBots } from "@/lib/bots";
-import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/api-football";
+import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/fixtures";
 import { isPredictionLocked } from "@/lib/time";
 import { markBadgesSeen } from "@/lib/badges";
 import { markStreakSeen } from "@/lib/profile";

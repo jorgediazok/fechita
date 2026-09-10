@@ -54,7 +54,7 @@ como-van/
     │   │       ├── auth/[...nextauth]/
     │   │       └── cron/sync/     # endpoint de sincronización (decide si pega a la API)
     │   ├── lib/
-    │   │   ├── api-football/      # FixtureProvider + implementaciones (ver "Fuente de partidos")
+    │   │   ├── fixtures/         # FixtureProvider + implementaciones (ver "Fuente de partidos")
     │   │   ├── sync.ts            # trae fixtures → upsert Match/Team → califica predicciones
     │   │   ├── leagues.ts         # ligas por fecha: grupos, ascenso/descenso, ganador de la fecha
     │   │   ├── groups.ts          # grupos privados
@@ -66,7 +66,7 @@ como-van/
     │   │   ├── competitions.ts    # qué competencias se sincronizan
     │   │   ├── auth.ts / session.ts / db.ts / site.ts
     │   └── models/               # schemas de Mongoose
-    └── scripts/                  # seed / fetch-season (corren con tsx)
+    └── scripts/                  # seed-leagues / seed-bots (corren con tsx)
 ```
 
 ---
@@ -99,10 +99,8 @@ npm run dev                   # http://localhost:3000
 | Variable | Para qué | Requerida |
 |---|---|---|
 | `MONGODB_URI` | Conexión a Mongo (`mongodb://localhost:27017/como-van` en local) | sí |
-| `FIXTURE_SOURCE` | `mock` \| `theoddsapi` \| `replay` \| `thesportsdb` \| `api-football` | sí (default `mock`) |
-| `THE_ODDS_API_KEY` | Key de [the-odds-api.com](https://the-odds-api.com) — free tier 500 créditos/mes | si `FIXTURE_SOURCE=theoddsapi` |
-| `API_FOOTBALL_KEY` | Key de [dashboard.api-football.com](https://dashboard.api-football.com) | para `replay` (bajar la temporada) y `api-football` |
-| `THESPORTSDB_KEY` | `123` es la key pública de prueba | solo `thesportsdb` |
+| `FIXTURE_SOURCE` | `mock` \| `theoddsapi` \| `replay` (uno a la vez) | sí (default `mock`) |
+| `THE_ODDS_API_KEY` | Key de [the-odds-api.com](https://the-odds-api.com) — free tier, sin tarjeta, 500 créditos/mes. Solo si `FIXTURE_SOURCE=theoddsapi` (`mock` y `replay` no necesitan ninguna key) | si `theoddsapi` |
 | `CRON_SECRET` | Secreto para autorizar `/api/cron/sync` | sí en prod |
 | `AUTH_SECRET` | Secreto de NextAuth (`openssl rand -base64 32`) | sí |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth Client ID de Google Cloud Console | solo para el botón de Google |
@@ -144,20 +142,24 @@ Fuente de partidos ──sync──▶ Match / Team / Competition ◀── el u
 
 ### Fuente de partidos (`FIXTURE_SOURCE`)
 
-Interfaz `FixtureProvider` en `lib/api-football/` con cinco implementaciones. `getFixtures(seed, window)`
-recibe el `CompetitionSeed` entero porque cada fuente identifica la liga con su propio id.
+Interfaz `FixtureProvider` en `lib/fixtures/`, **una implementación activa a la vez**.
+`getFixtures(seed, window)` recibe el `CompetitionSeed` entero para que cada fuente numere las
+fechas a su manera.
 
-| Valor | Provider | Qué hace |
-|---|---|---|
-| `mock` | `mockFixtureProvider` | Fixtures simulados, sin red. **Habilita el panel dev** de `/pronosticos` y `/liga` (sincronizar, simular resultados, "Cerrar fecha ahora"). Para iterar mecánicas rápido. |
-| `theoddsapi` | `theoddsapiFixtureProvider` | **En uso.** [The Odds API](https://the-odds-api.com) — API de cuotas que también da fixtures y resultados. Free tier 500 créditos/mes, temporada argentina en curso, oficial. |
-| `replay` | `replayFixtureProvider` | La temporada **real 2024 completa** (bajada con `npm run fetch-season`) corrida al presente, ~1 fecha/semana. Datos e IDs reales, sin llamadas a la API en runtime. Para demos offline. |
-| `thesportsdb` | `thesportsdbFixtureProvider` | TheSportsDB. Completo y funcionando, **pero el free tier limita las listas a 1 resultado** — necesita la key de supporter ($9/mes). |
-| `api-football` | `liveFixtureProvider` | API-Football en vivo. El **free tier solo cubre 2022–2024**, no la temporada actual (plan Pro ~$19/mes). |
+| Valor | Provider | Qué hace | ¿Key? |
+|---|---|---|---|
+| `mock` | `mockFixtureProvider` | Fixtures simulados, sin red. **Habilita el panel dev** de `/pronosticos` y `/liga` (sincronizar, simular resultados, "Cerrar fecha ahora"). Para iterar mecánicas rápido. | no |
+| `theoddsapi` | `theoddsapiFixtureProvider` | **La que va a prod.** [The Odds API](https://the-odds-api.com) — API de cuotas que también da fixtures y resultados. Free tier, sin tarjeta, 500 créditos/mes, temporada argentina en curso. | `THE_ODDS_API_KEY` |
+| `replay` | `replayFixtureProvider` | La temporada **real 2024 completa** (JSON congelado en `lib/fixtures/data/`) corrida al presente, ~1 fecha/semana. Datos e IDs reales, cero red. Para demos offline. | no |
+
+Se probaron y descartaron TheSportsDB (free tier limita las listas a 1 resultado) y API-Football
+en vivo (free tier solo cubre 2022–2024, plan Pro ~$19/mes). Si The Odds API se queda corto, el
+próximo escalón sería TheSportsDB Premium ($9/mes) o API-Football Pro.
 
 The Odds API no da número de fecha (se sintetiza agrupando por huecos > 2.5 días y numerando desde
 `competitions.ts#theOddsApiRoundAnchor` — **verificar contra promiedos.com.ar**) ni escudos/IDs de
-equipo (se mapean por nombre a IDs de API-Football en `TEAMS`, dentro del provider).
+equipo (se mapean por nombre a IDs de API-Football en `TEAMS`, dentro del provider — esos ids son
+el estándar canónico de equipos en toda la app).
 
 ### Sync y el cron de resultados
 
@@ -294,7 +296,6 @@ datos no requiere re-mapear.
 | `npm run seed` | Limpia datos de prueba viejos y crea 6 usuarios por categoría (contraseña `seed1234`) con pronósticos de spread + siembra los 20 bots |
 | `npm run seed:clean` | Solo limpia |
 | `npm run seed:bots` | Crea/actualiza los 20 bots y les carga los pronósticos de la ventana actual (idempotente) |
-| `npm run fetch-season` | Baja una temporada real de API-Football a un JSON (para `FIXTURE_SOURCE=replay`) |
 
 ---
 

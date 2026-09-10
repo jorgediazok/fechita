@@ -22,7 +22,7 @@ import {
   type TierCode,
 } from "@/lib/leagues";
 import { closeRoundNow, acknowledgeResult } from "./actions";
-import { isMockMode as runningInMockMode } from "@/lib/api-football/source";
+import { isMockMode as runningInMockMode } from "@/lib/fixtures/source";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

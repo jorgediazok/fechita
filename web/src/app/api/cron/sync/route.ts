@@ -4,8 +4,8 @@ import { runBots } from "@/lib/bots";
 import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import DevStateModel from "@/models/DevState";
-import { getFixtureSource } from "@/lib/api-football";
-import type { FetchWindow } from "@/lib/api-football/provider";
+import { getFixtureSource } from "@/lib/fixtures";
+import type { FetchWindow } from "@/lib/fixtures/provider";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;

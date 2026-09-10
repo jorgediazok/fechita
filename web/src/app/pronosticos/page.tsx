@@ -27,7 +27,7 @@ import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
 import { currentRoundStreak } from "@/lib/badges/award";
 import { getPendingStreak } from "@/lib/profile";
 import { CompetitionTabs } from "./CompetitionTabs";
-import { isMockMode as runningInMockMode, isReplayMode } from "@/lib/api-football/source";
+import { isMockMode as runningInMockMode, isReplayMode } from "@/lib/fixtures/source";
 import {
   getOrCreateActiveMembership,
   getGroupStanding,

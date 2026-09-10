@@ -6,7 +6,7 @@ import type { CompetitionSeed } from "../competitions";
 export type FetchWindow = "recent" | "full";
 
 export interface FixtureProvider {
-  // Recibe el seed completo porque cada fuente identifica la competencia con su propio id
-  // (API-Football usa externalId, TheSportsDB usa theSportsDbLeagueId).
+  // Recibe el seed completo porque cada fuente identifica la competencia y numera las fechas
+  // a su manera (The Odds API, por ejemplo, usa theOddsApiRoundAnchor).
   getFixtures(seed: CompetitionSeed, window?: FetchWindow): Promise<ApiFixture[]>;
 }

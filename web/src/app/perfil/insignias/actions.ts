@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { connectToDatabase } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { isMockMode } from "@/lib/api-football/source";
+import { isMockMode } from "@/lib/fixtures/source";
 import { evaluateBadgesForUser, resetUserBadges, BADGE_IDS } from "@/lib/badges";
 import UserBadgeModel from "@/models/UserBadge";
 
