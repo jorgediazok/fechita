@@ -25,7 +25,14 @@ export async function connectToDatabase() {
   }
 
   if (!cache.promise) {
-    cache.promise = mongoose.connect(MONGODB_URI);
+    cache.promise = mongoose.connect(MONGODB_URI, {
+      // Serverless: cada lambda abre su propio pool. Uno chico evita agotar el límite de
+      // conexiones de Atlas (bajo en M0) cuando hay varias lambdas vivas a la vez.
+      maxPoolSize: 5,
+      minPoolSize: 0,
+      // Fallar rápido si el cluster no responde, en vez de colgar la request 30 s.
+      serverSelectionTimeoutMS: 8000,
+    });
   }
 
   cache.conn = await cache.promise;
