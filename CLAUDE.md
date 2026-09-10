@@ -99,6 +99,7 @@ Cuando el usuario retome el trabajo acá:
   - **`.github/workflows/sync.yml`** cada 5 min (best-effort) — el poleo fino para que los resultados aparezcan ni bien terminan los partidos. Necesita secrets `SYNC_URL` y `CRON_SECRET` en el repo. Alternativa más firme: cron-job.org (gratis, hasta 1 min, sin límite de minutos, no se desactiva). El route saltea la mayoría de estas corridas.
   - **`vercel.json`** 1×/día (05:00 UTC) — red de seguridad que anda en cualquier plan de Vercel (Hobby limita los crons a 1/día de todos modos).
 - PWA desde el arranque (manifest + metadata mobile ya en `web/src/app/`). Presencia en Play Store/App Store vía Capacitor queda como decisión pendiente (ver `docs/product-design.md`), a retomar una vez que el loop central esté funcionando.
+- **Tests: Vitest** (`npm test`), archivos `src/**/*.test.ts` colocados. Solo lógica pura por ahora (`points`, `time`, `tiers`, `leagueZones`, `bots/strategy`, `push/messages`) — entorno `node`, sin DB ni DOM. La matemática de zonas se separó a `src/lib/leagueZones.ts` para testearla aislada (mismo criterio que `tiers.ts`). Al tocar reglas del juego, actualizá o agregá el test. Pendiente: integración con `mongodb-memory-server` y E2E con Playwright.
 
 ## Orden de construcción sugerido
 

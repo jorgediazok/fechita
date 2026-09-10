@@ -291,10 +291,34 @@ datos no requiere re-mapear.
 | `npm run dev` | Server de desarrollo |
 | `npm run build` / `npm start` | Build de producción / correrlo |
 | `npm run lint` | ESLint |
+| `npm test` / `npm run test:watch` | Vitest — unit tests de la lógica pura del juego |
 | `npm run seed` | Limpia datos de prueba viejos y crea 6 usuarios por categoría (contraseña `seed1234`) con pronósticos de spread + siembra los 20 bots |
 | `npm run seed:clean` | Solo limpia |
 | `npm run seed:bots` | Crea/actualiza los 20 bots y les carga los pronósticos de la ventana actual (idempotente) |
 | `npm run fetch-season` | Baja una temporada real de API-Football a un JSON (para `FIXTURE_SOURCE=replay`) |
+
+---
+
+## Tests
+
+**Vitest** (`npm test`), colocados como `src/**/*.test.ts`. Cubren la **lógica pura del
+juego** — la parte que define si el proyecto "funciona bien", sin depender de la DB ni del
+navegador:
+
+| Archivo | Qué verifica |
+|---|---|
+| `lib/points.test.ts` | El cálculo 5 / 3 / 0, el bonus de marcador exacto, media carga |
+| `lib/time.test.ts` | El cierre de la carga 1 h antes del kickoff, ventanas de fechas (con reloj falso) |
+| `lib/tiers.test.ts` | Ascenso/descenso entre categorías, topes en D y PRIMERA |
+| `lib/leagueZones.test.ts` | El tamaño de la zona de ascenso/descenso (`zoneSize`, ~25% clampeado) |
+| `lib/bots/strategy.test.ts` | Determinismo del RNG por `(bot, partido)`, efecto del `skill`, probabilidades bien formadas |
+| `lib/push/messages.test.ts` | El copy de cada notificación según el evento |
+
+Para poder testearlas aisladas, la matemática de zonas se separó a `lib/leagueZones.ts`
+(mismo criterio que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
+
+Pendiente: tests de integración de `closeGroup` / `evaluateBadgesForUser` con
+`mongodb-memory-server`, y un E2E del loop central (Playwright).
 
 ---
 
