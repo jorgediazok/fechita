@@ -19,6 +19,7 @@ import {
 } from "./actions";
 import { MatchPredictor } from "./MatchPredictor";
 import { PushNudge } from "@/components/PushClient";
+import { NotificationBell } from "@/components/NotificationBell";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
 import { StreakCelebration } from "@/components/StreakCelebration";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
@@ -226,8 +227,8 @@ export default async function PronosticosPage({
             boxShadow: "0 10px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}
         >
-          <div className="flex items-center justify-between text-[#F5F5FF]">
-            <span className="text-[11px] font-extrabold tracking-wide">
+          <div className="flex items-center justify-between gap-2 text-[#F5F5FF]">
+            <span className="min-w-0 truncate text-[11px] font-extrabold tracking-wide">
               {user.name.toUpperCase()} · {totalPoints} PTS
             </span>
             <div
@@ -254,6 +255,7 @@ export default async function PronosticosPage({
               </svg>
               <span className="font-display text-[13px] leading-none">{streak}</span>
             </div>
+            <NotificationBell />
           </div>
 
           {totalPlayers > 0 && (

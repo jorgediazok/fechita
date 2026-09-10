@@ -60,6 +60,7 @@ como-van/
     │   │   ├── groups.ts          # grupos privados
     │   │   ├── bots/              # 20 usuarios bot que pronostican solos
     │   │   ├── push/              # web push: claves VAPID, envío, dedupe, mensajes
+    │   │   ├── notifications.ts   # feed in-app (la campanita) sobre NotificationLog
     │   │   ├── points.ts          # cálculo 5 / 3 / 0
     │   │   ├── tiers.ts           # categorías D → C → B → NACIONAL → PRIMERA
     │   │   ├── competitions.ts    # qué competencias se sincronizan
@@ -210,19 +211,28 @@ pronóstico, crea uno. La estrategia pesa el 1-X-2 por fuerza de equipo (`teamSt
 mezclado con azar según el skill. **RNG determinístico por `(botId, matchId)`** — un re-run nunca
 cambia una jugada hecha.
 
-### Notificaciones push (`lib/push/`, web push)
+### Notificaciones (`lib/push/`, `lib/notifications.ts`)
 
-Web push (VAPID) — sin dependencias de terceros salvo `web-push` para mandar. Service worker
-solo-push en `public/sw.js` (no cachea nada, el offline completo queda fuera de scope),
-registrado desde `PhoneFrame` vía `<PushRegistrar>`. Opt-in con un toggle en `/perfil`
-(`PushToggle`) más una tarjeta suave la primera vez en `/pronosticos` (`PushNudge`), ambos en
-`components/PushClient.tsx`. Una fila `PushSubscription` por dispositivo; el sender
-(`lib/push/send.ts`) borra las que devuelven 404/410. `NotificationLog` (índice único
-`userId+kind+dedupeKey`, TTL 60 días) es el anti-duplicados: antes de mandar una notificación
-de evento se inserta ahí y si rebota, ya se mandó.
+Dos superficies sobre los mismos eventos:
 
-Sin las VAPID keys en el entorno, todo el subsistema queda inerte y la app funciona igual.
-**iOS**: web push solo anda con la PWA instalada en la pantalla de inicio (el toggle lo detecta).
+- **Push del sistema operativo** (web push / VAPID) — sin dependencias de terceros salvo
+  `web-push` para mandar. Service worker solo-push en `public/sw.js` (no cachea nada, el
+  offline completo queda fuera de scope), registrado desde `PhoneFrame` vía `<PushRegistrar>`.
+  Opt-in con un toggle en `/perfil` (`PushToggle`) más una tarjeta suave la primera vez en
+  `/pronosticos` (`PushNudge`), ambos en `components/PushClient.tsx`. Una fila
+  `PushSubscription` por dispositivo; el sender (`lib/push/send.ts`) borra las que devuelven
+  404/410. **Sin las VAPID keys esta capa queda inerte** y la app funciona igual.
+  **iOS**: solo anda con la PWA instalada en la pantalla de inicio (el toggle lo detecta).
+- **Campanita in-app** (`NotificationBell`, solo en `/pronosticos`, dentro del hero) — el
+  historial de novedades con contador de no leídas y una hoja con la lista. Lee de
+  `NotificationLog` vía `lib/notifications.ts` + `app/notifications-actions.ts`. **Funciona
+  aunque el push no esté configurado.**
+
+`NotificationLog` (índice único `userId+kind+dedupeKey`, TTL 60 días) cumple las dos cosas:
+es el **anti-duplicados** (antes de notificar un evento se inserta ahí; si rebota, ya se
+notificó) y guarda el **texto** (`title`/`body`/`url`) + `readAt` para el feed. `sendToUser()`
+escribe esa fila siempre; el push del SO es la capa opcional encima. Las notificaciones de
+prueba (sin `dedupe`) no entran al feed.
 
 Disparadores (v1, todos reactivos):
 
@@ -266,7 +276,7 @@ usan `PhoneFrame` (columna angosta) a propósito — es un producto mobile. Acce
 | `LeagueMembership` | usuario en un grupo (`points` snapshot, `result`, `wonRound`) |
 | `Group` / `GroupMembership` | grupos privados de amigos |
 | `PushSubscription` | una suscripción web push por dispositivo (`endpoint` único) |
-| `NotificationLog` | anti-duplicados de push (`userId+kind+dedupeKey` único, TTL 60d) |
+| `NotificationLog` | anti-duplicados de notificaciones + feed in-app (`title`/`body`/`url`/`readAt`; `userId+kind+dedupeKey` único, TTL 60d) |
 | `DevState` | doc único: `lastSyncAt`, `replayStartedAt` |
 
 Los `externalId` de partidos y equipos son ids reales de API-Football, así que cambiar de fuente de
