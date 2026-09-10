@@ -91,7 +91,7 @@ function scoreFor(ev: OddsEvent, oddsTeamName: string): number | null {
 
 // The Odds API no da número de fecha. Se agrupan los partidos en "fechas" (corte cuando hay
 // un hueco > 4 días) y se numeran desde un ancla configurable (competitions.ts).
-function assignRounds(events: OddsEvent[], seed: CompetitionSeed): Map<string, string> {
+export function assignRounds(events: OddsEvent[], seed: CompetitionSeed): Map<string, string> {
   const anchor = seed.theOddsApiRoundAnchor;
   const sorted = [...events]
     .map((e) => ({ id: e.id, ms: new Date(e.commence_time).getTime() }))

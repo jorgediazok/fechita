@@ -21,9 +21,12 @@ export const COMPETITIONS: CompetitionSeed[] = [
     name: "Liga Profesional Argentina",
     slug: "liga-profesional",
     logoUrl: "",
-    // La fecha que arranca el 11/09/2026 es la 9. El torneo va hasta la fecha 16 y después
+    // La fecha 9 arranca el 11/09/2026 20:00 UTC (Newell's–Vélez). El ancla lleva la hora
+    // real del primer partido, no la medianoche: si no, un cluster de la fecha anterior que
+    // The Odds API todavía devuelve (ventana de 3 días) cae a ~-3 días del ancla y redondea
+    // a la fecha equivocada en vez de a la de abajo. El torneo va hasta la fecha 16 y después
     // empiezan los playoffs — cuando lleguen, este numerado va a dar "Fecha 17+" y hay que
     // manejarlo aparte en theoddsapiProvider.
-    theOddsApiRoundAnchor: { date: "2026-09-11", round: 9 },
+    theOddsApiRoundAnchor: { date: "2026-09-11T20:00:00Z", round: 9 },
   },
 ];
