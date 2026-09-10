@@ -291,10 +291,43 @@ datos no requiere re-mapear.
 | `npm run dev` | Server de desarrollo |
 | `npm run build` / `npm start` | Build de producción / correrlo |
 | `npm run lint` | ESLint |
+| `npm test` / `npm run test:watch` | Vitest — unit tests de la lógica pura del juego |
 | `npm run seed` | Limpia datos de prueba viejos y crea 6 usuarios por categoría (contraseña `seed1234`) con pronósticos de spread + siembra los 20 bots |
 | `npm run seed:clean` | Solo limpia |
 | `npm run seed:bots` | Crea/actualiza los 20 bots y les carga los pronósticos de la ventana actual (idempotente) |
 | `npm run fetch-season` | Baja una temporada real de API-Football a un JSON (para `FIXTURE_SOURCE=replay`) |
+
+---
+
+## Tests
+
+**Vitest** — `npm test` (todo) · `npm run test:watch`. Dos proyectos:
+
+### `unit` — lógica pura (`src/**/*.test.ts`), entorno node, sin DB
+
+| Archivo | Qué verifica |
+|---|---|
+| `lib/points.test.ts` | El cálculo 5 / 3 / 0, el bonus de marcador exacto, media carga |
+| `lib/time.test.ts` | El cierre de la carga 1 h antes del kickoff, ventanas de fechas (con reloj falso) |
+| `lib/tiers.test.ts` | Ascenso/descenso entre categorías, topes en D y PRIMERA |
+| `lib/leagueZones.test.ts` | El tamaño de la zona de ascenso/descenso (`zoneSize`, ~25% clampeado) |
+| `lib/bots/strategy.test.ts` | Determinismo del RNG por `(bot, partido)`, efecto del `skill`, probabilidades bien formadas |
+| `lib/push/messages.test.ts` | El copy de cada notificación según el evento |
+
+Para testear la matemática de zonas aislada se separó a `lib/leagueZones.ts` (mismo criterio
+que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
+
+### `integration` — lógica que toca la base (`src/**/*.integration.test.ts`)
+
+Contra una **MongoDB en memoria** (`mongodb-memory-server`, `test/setup-integration.ts`) —
+no toca ninguna base real. Fixtures en `test/factories.ts`.
+
+| Archivo | Qué verifica |
+|---|---|
+| `lib/leagues.integration.test.ts` | `closeExpiredGroups`: ascenso del top ~25% y descenso del bottom ~25%, `wonRound` solo del #1, sin ascenso desde PRIMERA ni descenso desde D, reinscripción en la fecha siguiente con el tier actualizado, orden de `getGroupStanding` |
+| `lib/badges/streak.integration.test.ts` | `currentRoundStreak`: la regla de ≥3 pronósticos y +50% de aciertos por fecha, el corte en la primera fecha que falla, "la mitad justa no alcanza" |
+
+Pendiente: E2E del loop central (Playwright), y más integración de `evaluateBadgesForUser`.
 
 ---
 
