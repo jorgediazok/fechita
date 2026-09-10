@@ -1,6 +1,4 @@
-# Cómo Van
-
-> **"Cómo Van" es un nombre placeholder**, no el definitivo — ver [_Nombre de la app_ en `docs/product-design.md`](docs/product-design.md).
+# Fechita
 
 Prode (pronósticos de fútbol) enfocado 100% en el público argentino. Pensado como proyecto de
 portfolio con potencial de uso real: identidad local + diseño cuidado + el eje puesto en la
@@ -8,7 +6,9 @@ competencia social (ligas con ascenso/descenso, grupos de amigos), no solo en ac
 
 **Estado:** el loop central anda de punta a punta y las capas sociales (ligas por fecha, grupos
 privados, bots) están sobre un modelo real y auth real. Los partidos salen de **The Odds API**
-(free tier, temporada argentina en curso). Falta: insignias y trivia diaria.
+(free tier, temporada argentina en curso). Falta: trivia diaria y el hardening de auth
+pre-lanzamiento. El logo (banderín de córner como la "i" de _Fechita_) está pendiente de
+ejecutar en vector — hoy la marca es el wordmark en Manrope 800.
 
 El diseño completo del producto —por qué existe, contra quién compite, todas las mecánicas y las
 decisiones de scope— está en **[`docs/product-design.md`](docs/product-design.md)**. Notas de
@@ -36,12 +36,12 @@ arquitectura para trabajar en el repo, en **[`CLAUDE.md`](CLAUDE.md)**.
 ## Estructura del repo
 
 ```
-como-van/
+fechita/
 ├── docs/product-design.md   # fuente de verdad del producto: mecánicas, decisiones, scope
 ├── CLAUDE.md                 # notas de arquitectura / cómo trabajar en el código
 ├── docker-compose.yml        # MongoDB local para desarrollo
 ├── .github/workflows/sync.yml # cron externo que dispara /api/cron/sync
-└── web/                       # la app Next.js (paquete `como-van-web`)
+└── web/                       # la app Next.js (paquete `fechita-web`)
     ├── src/
     │   ├── app/               # rutas (App Router)
     │   │   ├── page.tsx           # landing pública
@@ -98,7 +98,7 @@ npm run dev                   # http://localhost:3000
 
 | Variable | Para qué | Requerida |
 |---|---|---|
-| `MONGODB_URI` | Conexión a Mongo (`mongodb://localhost:27017/como-van` en local) | sí |
+| `MONGODB_URI` | Conexión a Mongo (`mongodb://localhost:27017/fechita` en local) | sí |
 | `FIXTURE_SOURCE` | `mock` \| `theoddsapi` \| `replay` (uno a la vez) | sí (default `mock`) |
 | `THE_ODDS_API_KEY` | Key de [the-odds-api.com](https://the-odds-api.com) — free tier, sin tarjeta, 500 créditos/mes. Solo si `FIXTURE_SOURCE=theoddsapi` (`mock` y `replay` no necesitan ninguna key) | si `theoddsapi` |
 | `CRON_SECRET` | Secreto para autorizar `/api/cron/sync` | sí en prod |

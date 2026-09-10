@@ -1,6 +1,6 @@
-# Cómo Van (nombre placeholder) — Diseño de producto
+# Fechita — Diseño de producto
 
-> Nombre de la app todavía sin definir. "Cómo Van" es un placeholder de trabajo, no una decisión final — ver sección "Nombre" más abajo.
+> Nombre decidido el 2026-09-10: **Fechita**. Ver sección "Nombre de la app" más abajo para el historial de opciones descartadas.
 
 ## Qué es
 
@@ -31,21 +31,19 @@ Deliberadamente **no** se cubren ligas de otros países — ir angosto y profund
 
 ## Nombre de la app
 
-Todavía sin resolver, y **es el camino crítico para deployar** (bloquea dominio, OAuth de Google, metadata, nombre del repo/paquete). Jorge no quiere tomar una URL que después no va a usar.
+**Decidido el 2026-09-10: "Fechita".** El diminutivo de "la fecha" — la unidad que organiza todo el juego (ligas por fecha, ganador de la fecha, ascenso/descenso al cerrar cada fecha). Cálido, argentino, y es el vocabulario que la app ya usa en todos lados ("¿cargaste la fechita?"). Dominios `fechita.app` / `fechita.com.ar` libres al momento de decidir; sin colisión con ninguna app de prode en las stores. El wordmark es "fechita" en minúsculas, Manrope 800.
 
-**Descartados:**
+**Logo:** la dirección elegida es un **banderín de córner reemplazando la "i"** de _fechita_ (mástil del grosor del trazo de las letras, tela triangular con leve caída, degradé violeta→magenta; el ícono de la app es el banderín solo sobre el cuadrado con degradé). Quedó **pendiente de ejecutar en vector** — se exploró a fondo en el chat pero meter la bandera dentro de la palabra sin que choque con la "t" y con la alineación justa necesita trabajo tipográfico fino (Figma/Illustrator). Hasta entonces la app usa solo el wordmark.
+
+**Descartados en el camino (2026-09):**
 - Literales (suenan a categoría de sitio, no a marca): "Cómo Van", "Cómo Salieron", "Quién Ganó", "Resultado Final", "Ganó o Perdió", "Buen Resultado".
 - Sin razón específica: "La Fija", "Cantala", "La Posta", "Ojo Clínico".
-- Colisión: "Tribuna" (marca de medios, Tribuna.com AR). "Prodecito" (ya hay una web).
-- "La Cargada" — se exploró como la más prometedora, descartada 2026-09-08 (no le gusta).
-- "Puntazo" — también significa navajazo en Argentina, no va para una app social.
-- Familia "prode + X" — genérica, es lo que hace GameOn; el diferencial es NO ser un prode genérico.
+- Colisión: "Tribuna" (marca de medios). "Prodecito" (ya hay una web). "En Racha" (marca de juego de The Rank Group, con `enracha.com.ar` tomado defensivamente; además existe "Racha FC" en la App Store argentina). "Predikta" / "Predix" (productos idénticos ya publicados; Predix es además la plataforma industrial de GE). "Picadito" (`picadito.app` es una app viva de reserva de canchas).
+- "La Cargada" (2026-09-08, no le gusta). "Puntazo" (también = navajazo). "Puntero" (carga política negativa en Argentina).
+- Descriptivos / sin color local: "Data", "Maestro", "Olfato", "Pálpito" (Jorge: el que menos le gustó), "Ficha", "La Equis", "LEV" (críptico, no comunica).
+- Familia "prode + X" — genérica, es lo que hace GameOn.
 
-**Criterio que quedó (2026-09-08):** palabra real con doble sentido futbolero, evocativa antes que descriptiva, con un guiño a que es un prode sin decirlo literal.
-
-**Shortlist en juego (ninguna confirmada):** Tablón (sector de la hinchada + tabla de posiciones), Racha, Revancha, Maestro, Data ("tengo data para este partido"), Ojímetro ("a ojímetro" = al cálculo). Verificar dominio + colisiones de la que se elija.
-
-**"Cómo Van" se usa acá solo como placeholder de trabajo** para nombrar el repo y avanzar con la arquitectura sin bloquearse en branding.
+**Criterio que quedó (2026-09-08):** palabra real, evocativa antes que descriptiva, con un guiño a que es un prode sin decirlo literal. El tirón de Jorge fue siempre hacia el mundo de la ficha / L·E·V / la fecha.
 
 ## Mecánicas de juego
 

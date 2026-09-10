@@ -1,6 +1,6 @@
-# como-van-web
+# fechita-web
 
-La app Next.js de **Cómo Van**. La documentación vive en la raíz del repo:
+La app Next.js de **Fechita**. La documentación vive en la raíz del repo:
 
 - [`../README.md`](../README.md) — arquitectura completa, arranque local, deploy
 - [`../docs/product-design.md`](../docs/product-design.md) — diseño del producto

@@ -12,7 +12,7 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "Cómo Van";
+  const title = data.title || "Fechita";
   const options = {
     body: data.body || "",
     tag: data.tag || undefined,

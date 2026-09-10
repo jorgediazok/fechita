@@ -2,7 +2,7 @@ import webpush from "web-push";
 
 const PUBLIC = process.env.VAPID_PUBLIC_KEY;
 const PRIVATE = process.env.VAPID_PRIVATE_KEY;
-const SUBJECT = process.env.VAPID_SUBJECT || "mailto:hola@comovan.example";
+const SUBJECT = process.env.VAPID_SUBJECT || "mailto:hola@fechita.app";
 
 let configured = false;
 
