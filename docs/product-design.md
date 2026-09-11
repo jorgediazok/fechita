@@ -90,7 +90,8 @@ Sin dinero ni apuestas — descartado por riesgo legal/regulatorio de juego en A
 - La "racha" del usuario se mide por fecha/partido jugado, no por día calendario — evita forzar un hábito diario artificial sobre un deporte que no lo tiene.
 - Para los días sin partido: el gancho es revisar la posición en la liga de la fecha (puede moverse por otros cargando pronósticos), reforzado con notificaciones push inteligentes ("te superaron", "cierra la carga en 2 horas", "estás cerca de ascender").
   - **Estado (v1, 2026-09-09):** web push implementado (`web/src/lib/push/`, ver README §"Notificaciones push"). Opt-in con toggle en `/perfil` + tarjeta post-onboarding en `/pronosticos`. Disparadores activos: terminó la fecha / sumaste N pts (T2), insignia nueva (T3), cierre de fecha con ascenso/descenso/ganador (T4), y una de prueba. **Pendiente:** "cierra la carga en ~2h" (T5, necesita el cron corriendo) y "te superaron" / "cerca de ascender" (T6, necesita snapshot de posición para diffear).
-- **Trivia diaria de cultura futbolera** (no ligada a un partido específico): aporta un tope de **5 puntos extra por fecha** a la liga (no ilimitado, para no diluir que el ascenso refleje saber predecir fútbol real de verdad). El resto de puntos de trivia van a un track separado de XP/insignias, sin afectar el ascenso.
+- **Trivia diaria de cultura futbolera** (no ligada a un partido específico): aporta un tope de **5 puntos extra por fecha** a la liga (no ilimitado, para no diluir que el ascenso refleje saber predecir fútbol real de verdad). Todos los aciertos —haya o no tope disponible esa fecha— suman también a un track separado de insignias, sin afectar el ascenso.
+  - **Implementado (2026-09-11).** 1 pregunta múltiple choice por día (`web/src/lib/trivia/`), banco de 61 preguntas curadas a mano en código (mismo criterio que el catálogo de insignias — nada de IA en vivo ni colección en DB), historia estable del fútbol argentino (Mundiales, clubes, Libertadores/Sudamericana, jugadores), sin datos "vigentes" que puedan desactualizarse. La pregunta del día es determinística por fecha (hash de `YYYY-MM-DD` en huso argentino, `lib/hash.ts` — mismo mecanismo que el RNG de los bots) y cambia a la medianoche de Argentina, no de UTC. `TriviaAnswer` (un doc por usuario y día) guarda la respuesta; el bonus a la liga se calcula en vivo en `lib/leagues.ts` contando aciertos con fecha dentro de la ventana de kickoffs de esa ronda, topeado en 5. Insignias nuevas ("Preguntón"/"Sabelotodo"/"Enciclopedia", 10/30/60 aciertos de por vida) en el catálogo existente — no hay pantalla propia. Tarjeta en `/pronosticos` (`TriviaCard`), debajo del nudge de push.
 
 ## Dirección de diseño visual (mockups, 2026-09-05)
 
@@ -208,11 +209,11 @@ Resumen de alto nivel, todavía sin definir campo por campo:
 - **`Group` / `GroupMembership`** — grupos privados de amigos, código de invitación, competencias seguidas.
 - **`RoundLeagueGroup` / `LeagueMembership`** — ligas por fecha con categoría (Primera D→Primera División), puntos de la fecha, resultado (ascendió/descendió/se mantuvo), ganador de la fecha. Se genera un lote nuevo cada fecha, agrupando usuarios de a ~24 mezclados por club. (El nombre en el código quedó `RoundLeagueGroup`; antes era `WeeklyLeagueGroup` cuando el ciclo era semanal.)
 - **`Badge` / `UserBadge`** — insignias, criterio de obtención, fecha.
-- **`TriviaQuestion` / `TriviaAnswer`** — trivia diaria, con el tope de 5 pts/fecha hacia la liga.
+- **`TriviaAnswer`** — trivia diaria (una respuesta por usuario/día), con el tope de 5 pts/fecha hacia la liga calculado en vivo. El catálogo de preguntas quedó en código (`lib/trivia/catalog.ts`), no como colección — no hizo falta el `TriviaQuestion` que se había pensado acá.
 
 ## Orden de construcción sugerido
 
-Arrancar con las capas 1+2 nomás (sincronizar partidos + cargar pronósticos + calcular puntos) y tenerlo funcionando de punta a punta antes de tocar grupos, ligas por fecha, insignias o trivia — esas cuatro capas son aditivas y no rompen nada del loop central si se agregan después.
+Arrancar con las capas 1+2 nomás (sincronizar partidos + cargar pronósticos + calcular puntos) y tenerlo funcionando de punta a punta antes de tocar grupos, ligas por fecha, insignias o trivia — esas cuatro capas son aditivas y no rompen nada del loop central si se agregan después. Las cuatro ya están implementadas (2026-09-11) — no queda ninguna capa aditiva pendiente del alcance original de este documento.
 
 ## Endurecer auth y registro (PENDIENTE — bloqueante antes de difundir la app públicamente)
 
