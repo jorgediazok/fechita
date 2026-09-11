@@ -6,10 +6,12 @@ import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserModel from "@/models/User";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
+import TriviaAnswerModel from "@/models/TriviaAnswer";
 import { evaluateBadgesForUsers, currentRoundStreak } from "./badges/award";
 import { sendToUser } from "./push/send";
 import { roundCloseMessage } from "./push/messages";
 import { zoneSize } from "./leagueZones";
+import { triviaDayKey, TRIVIA_ROUND_CAP } from "./trivia";
 import {
   TIER_ORDER,
   TIER_LABELS,
@@ -110,14 +112,46 @@ async function getLivePoints(userIds: Types.ObjectId[], roundKey: string) {
   return new Map(rows.map((r) => [String(r._id), r.total]));
 }
 
+// Cuánto suma la trivia diaria a esta fecha puntual: aciertos de trivia con `dayKey` dentro
+// de la ventana de la fecha (desde el primer kickoff hasta el último + 1 día, el mismo
+// margen que usa `closesAt` para un partido postergado), tope TRIVIA_ROUND_CAP por usuario.
+// El resto de los aciertos igual cuentan para las insignias (lib/trivia#totalTriviaHits),
+// pero no siguen empujando el ascenso — ver docs/product-design.md.
+async function getTriviaRoundBonus(userIds: Types.ObjectId[], roundKey: string) {
+  if (userIds.length === 0) return new Map<string, number>();
+
+  const bounds = await getRoundBounds(roundKey);
+  if (!bounds) return new Map<string, number>();
+
+  const fromDay = triviaDayKey(bounds.first);
+  const toDay = triviaDayKey(new Date(bounds.last.getTime() + DAY_MS));
+
+  const rows = await TriviaAnswerModel.aggregate<{ _id: Types.ObjectId; n: number }>([
+    {
+      $match: {
+        userId: { $in: userIds },
+        correct: true,
+        dayKey: { $gte: fromDay, $lte: toDay },
+      },
+    },
+    { $group: { _id: "$userId", n: { $sum: 1 } } },
+  ]);
+
+  return new Map(rows.map((r) => [String(r._id), Math.min(r.n, TRIVIA_ROUND_CAP)]));
+}
+
 async function standingFor(groupId: Types.ObjectId, roundKey: string) {
   const memberships = await LeagueMembershipModel.find({ groupId });
-  const pointsMap = await getLivePoints(
-    memberships.map((m) => m.userId),
-    roundKey
-  );
+  const userIds = memberships.map((m) => m.userId);
+  const [pointsMap, triviaMap] = await Promise.all([
+    getLivePoints(userIds, roundKey),
+    getTriviaRoundBonus(userIds, roundKey),
+  ]);
   return memberships
-    .map((m) => ({ membership: m, points: pointsMap.get(String(m.userId)) ?? 0 }))
+    .map((m) => ({
+      membership: m,
+      points: (pointsMap.get(String(m.userId)) ?? 0) + (triviaMap.get(String(m.userId)) ?? 0),
+    }))
     .sort((a, b) => b.points - a.points);
 }
 

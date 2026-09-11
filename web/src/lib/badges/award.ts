@@ -10,6 +10,7 @@ import LeagueMembershipModel from "@/models/LeagueMembership";
 import UserBadgeModel from "@/models/UserBadge";
 import { sendToUser } from "../push/send";
 import { badgeMessage } from "../push/messages";
+import { totalTriviaHits } from "../trivia";
 
 // Un "acierto" es un pronóstico que sumó al menos 3 puntos (dirección correcta). El punto
 // flat de 1 por partido anulado no cuenta.
@@ -137,7 +138,7 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
 
   // Todos los criterios que pegan a la DB, en paralelo (antes eran ~7 consultas en serie, la
   // parte más lenta de abrir /pronosticos).
-  const [hitCount, rachaStreak, exactCount, wonRound, superclasico, sorpresa] = await Promise.all([
+  const [hitCount, rachaStreak, exactCount, triviaHits, wonRound, superclasico, sorpresa] = await Promise.all([
     has("aciertos")
       ? PredictionModel.countDocuments({ userId: user._id, points: HIT })
       : Promise.resolve(0),
@@ -145,6 +146,7 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
     has("exactos")
       ? PredictionModel.countDocuments({ userId: user._id, points: 5 })
       : Promise.resolve(0),
+    has("trivia") ? totalTriviaHits(user._id) : Promise.resolve(0),
     !earned.has("ganador")
       ? LeagueMembershipModel.exists({ userId: user._id, wonRound: true })
       : Promise.resolve(null),
@@ -180,6 +182,16 @@ export async function evaluateBadgesForUser(userId: Types.ObjectId | string): Pr
       ["brujo", 25],
     ] as const) {
       if (!earned.has(id) && exactCount >= n) newly.push(id);
+    }
+  }
+
+  if (has("trivia")) {
+    for (const [id, n] of [
+      ["curioso", 10],
+      ["erudito", 30],
+      ["enciclopedia", 60],
+    ] as const) {
+      if (!earned.has(id) && triviaHits >= n) newly.push(id);
     }
   }
 
