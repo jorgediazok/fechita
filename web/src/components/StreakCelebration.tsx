@@ -70,7 +70,10 @@ export function StreakCelebration({
               </svg>
             </div>
           </div>
-          <span className="sc-pop absolute font-display text-[44px] text-[#0B0C16]" style={{ marginTop: "6px" }}>
+          <span
+            className="sc-pop absolute font-display text-[44px] text-white"
+            style={{ marginTop: "6px", textShadow: "0 2px 6px rgba(0,0,0,0.45)" }}
+          >
             {streak}
           </span>
         </div>
