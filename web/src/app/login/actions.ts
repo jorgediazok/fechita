@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type LoginState = { error?: string };
 
@@ -18,6 +19,14 @@ export async function loginWithCredentials(
 
   if (!email || !password) {
     return { error: "Completá tu email y tu contraseña." };
+  }
+
+  // Contra fuerza bruta / credential stuffing: máximo 10 intentos por IP cada 10 min,
+  // acierten o no la contraseña.
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`login:${ip}`, { max: 10, windowMs: 10 * 60 * 1000 });
+  if (!allowed) {
+    return { error: "Demasiados intentos. Probá de nuevo en un rato." };
   }
 
   try {

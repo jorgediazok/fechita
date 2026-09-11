@@ -12,6 +12,17 @@ export function SignupForm({ teams }: { teams: PickerTeam[] }) {
 
   return (
     <form action={action} className="flex flex-col gap-6 px-7 py-7">
+      {/* Honeypot anti-bots: invisible y fuera del árbol de accesibilidad, un humano jamás lo
+          completa. Si llega con valor, signupAction lo descarta en silencio. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 overflow-hidden"
+      />
+
       <div className="flex flex-col gap-3">
         {state.error && (
           <p
