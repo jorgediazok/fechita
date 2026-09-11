@@ -278,11 +278,11 @@ evita mandarlo más de una vez por usuario aunque varias corridas caigan adentro
 
 ### Insignias, racha y perfil (`lib/badges/`, `lib/profile.ts`)
 
-- **Insignias**: 21 insignias en código (`lib/badges/catalog.ts`, sin colección de catálogo en
+- **Insignias**: 22 insignias en código (`lib/badges/catalog.ts`, sin colección de catálogo en
   DB — el mismo criterio que `tiers.ts`), en 7 familias: aciertos acumulados, rachas, resultados
-  exactos, trivia diaria (ver abajo), ascensos de categoría, hitos (ganador de la fecha,
-  superclásico, sorpresa) y una meta ("Las tenés todas") por completar las otras 20. Cada
-  insignia ganada se guarda en `UserBadge`.
+  exactos, trivia diaria (ver abajo), ascensos de categoría, hitos (**bienvenida** —ver
+  "Bienvenida" abajo—, ganador de la fecha, superclásico, sorpresa) y una meta ("Las tenés
+  todas") por completar las otras 21. Cada insignia ganada se guarda en `UserBadge`.
   Se evalúan (`evaluateBadgesForUser`, `lib/badges/award.ts`) al sincronizar, al cerrar una fecha y
   al abrir `/pronosticos`; los bots quedan afuera. La grilla vive en `/perfil/insignias`
   (`BadgeShowcase`, con el criterio de cada una); ganar una dispara un festejo
@@ -312,8 +312,14 @@ los usuarios ven la misma pregunta el mismo día, sin tabla de "pregunta de hoy"
 El hash (`cyrb53`, `lib/hash.ts`) es compartido con el RNG determinístico de los bots.
 
 `TriviaAnswer` (un doc por usuario y día, índice único) guarda la respuesta; el servidor nunca
-manda el índice correcto hasta que el usuario contesta. Card en `/pronosticos`
-(`TriviaCard`, debajo del nudge de push).
+manda el índice correcto hasta que el usuario contesta.
+
+**No es una card fija en el feed** —le restaba protagonismo a los partidos—, sino un modal
+autocontenido (`TriviaModal`, mismo patrón que `StreakInfo`: ancla arriba-centro, no
+full-screen). Un ícono chico en el hero (al lado de la campanita, con un punto si falta
+responder) lo abre a demanda, y además **se abre solo** al entrar a `/pronosticos` si todavía
+no la respondiste hoy y no hay nada de más prioridad en pantalla (bienvenida, insignias o
+racha sin ver). El ícono desaparece una vez respondida.
 
 **Puntaje, en dos tracks separados:**
 - Hasta **5 aciertos por fecha** suman al standing en vivo de la liga — el bonus se calcula
@@ -324,6 +330,22 @@ manda el índice correcto hasta que el usuario contesta. Card en `/pronosticos`
 
 Cae bajo el mismo candado que cargar pronósticos (`canParticipate()` — ver "Seguridad del
 registro" abajo): suma puntos a la liga, así que es "participar", no solo "existir la cuenta".
+Tampoco se pide mientras el usuario no vio la bienvenida (ver abajo) — quedaría out of
+context antes de entender que la app es un prode.
+
+### Bienvenida (`lib/welcome.ts`, `WelcomeOverlay`)
+
+Un usuario nuevo no ve la trivia del día como primera pantalla —quedaba fuera de contexto,
+antes de entender que esto es un prode. `User.welcomedAt` (`null` = todavía no la vio) se
+setea en la **primera visita real a `/pronosticos`**, el punto en común entre los dos caminos
+de alta: los de Credentials eligen club en `/signup` y nunca pasan por `/onboarding`; solo los
+de Google (que no dan el club) pasan por ahí.
+
+Mientras esté sin ver, `/pronosticos` tapa todo con `WelcomeOverlay` (mismo lenguaje visual que
+`BadgeUnlockOverlay`) en vez del contenido normal: la explicación mínima del loop central (3
+líneas) y el festejo de tu primera insignia (`bienvenida`), combinados en un solo momento para
+no encadenar dos interrupciones seguidas. Esa insignia no la evalúa el criterio genérico de
+`award.ts` — se otorga directo (ya marcada como vista) al tocar "Dale, vamos".
 
 ### Seguridad del registro (`lib/rateLimit.ts`, `lib/emailVerification.ts`)
 
@@ -426,7 +448,7 @@ datos no requiere re-mapear.
 | `lib/fixtures/theoddsapiProvider.test.ts` | `assignRounds`: numerar fechas agrupando por huecos > 2.5 días desde el ancla real de la primera fecha |
 | `lib/emailVerification.test.ts` | `canParticipate`: la política (`REQUIRE_EMAIL_VERIFICATION`) manda sobre el estado real del usuario; default apagado |
 | `lib/profile.test.ts` | `bestTierOf`: el techo histórico no baja al descender, y no se rompe sin `bestTier` persistido |
-| `lib/badges/catalog.test.ts` | El catálogo de 21 insignias: ids únicos, cada una con rareza/grupo válidos, `BADGE_GROUPS` las reparte todas sin repetir, `coleccionista` es la única de la meta |
+| `lib/badges/catalog.test.ts` | El catálogo de 22 insignias: ids únicos, cada una con rareza/grupo válidos, `BADGE_GROUPS` las reparte todas sin repetir, `coleccionista` es la única de la meta |
 | `lib/trivia/today.test.ts` | `triviaDayKey`: huso argentino, no UTC; `questionForDay`: determinística por día, cubre el catálogo |
 
 Para testear la matemática de zonas aislada se separó a `lib/leagueZones.ts` (mismo criterio
@@ -442,6 +464,7 @@ no toca ninguna base real. Fixtures en `test/factories.ts`.
 | `lib/leagues.integration.test.ts` | `closeExpiredGroups`: ascenso del top ~25% y descenso del bottom ~25%, `wonRound` solo del #1, sin ascenso desde PRIMERA ni descenso desde D, reinscripción en la fecha siguiente con el tier actualizado, orden de `getGroupStanding` |
 | `lib/leagues.trivia.integration.test.ts` | El bonus de trivia en el standing en vivo: suma aciertos dentro de la ventana de la fecha con tope de 5, ignora los de fuera de la ventana |
 | `lib/badges/streak.integration.test.ts` | `currentRoundStreak`: la regla de ≥3 pronósticos y +50% de aciertos por fecha, el corte en la primera fecha que falla, "la mitad justa no alcanza" |
+| `lib/welcome.integration.test.ts` | `completeWelcome`: setea `welcomedAt` y otorga la insignia de bienvenida ya vista; idempotente (correrlo dos veces no duplica) |
 | `lib/trivia/trivia.integration.test.ts` | `answerTrivia`: registra y puntúa, no deja responder dos veces el mismo día, rechaza pregunta vieja/opción inválida; `getTriviaState` no revela la respuesta antes de contestar; `totalTriviaHits` cuenta solo aciertos, sin tope |
 
 Pendiente: E2E del loop central (Playwright), y más integración de `evaluateBadgesForUser`.

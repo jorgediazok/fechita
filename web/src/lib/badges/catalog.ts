@@ -123,6 +123,13 @@ const up = (letter: string) =>
   '<path d="M4 11.4l8-7 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
   `<text x="12" y="21.4" text-anchor="middle" font-size="8.5" font-weight="800" fill="currentColor" font-family="Manrope, sans-serif">${letter}</text>`;
 
+// El banderín de córner de la marca (BrandMark.tsx), reescalado de su viewBox 64x64 al 24x24
+// de los motifs — la insignia de bienvenida usa el símbolo de la app misma.
+const flagWelcome =
+  '<path d="M9.8 3.8L9.8 19.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+  '<ellipse cx="9.8" cy="20.4" rx="2" ry="0.7" fill="currentColor" opacity="0.5"/>' +
+  '<path d="M9.8 4.5Q13.5 5.1 17.1 7.7Q13.5 10.1 9.8 10.3Z" fill="currentColor"/>';
+
 const laurelOne =
   '<path d="M8.4 20C4.6 18.2 3.4 13 4.6 8c3 1 4.9 4.2 4.7 8.2M15.6 20c3.8-1.8 5-7 3.8-12-3 1-4.9 4.2-4.7 8.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>' +
   '<text x="12" y="15.2" text-anchor="middle" font-size="9.5" font-weight="800" fill="currentColor" font-family="Manrope, sans-serif">1</text>';
@@ -211,7 +218,11 @@ export const BADGES: BadgeDef[] = [
     flavor: "El techo. Acá se juega entre los mejores de la app.",
     criterio: "Llegar por primera vez a Primera División" },
 
-  // hitos
+  // hitos — "bienvenida" no la evalúa award.ts: se otorga directo en lib/welcome.ts, la
+  // primera vez que el usuario llega a /pronosticos (ver WelcomeOverlay).
+  { id: "bienvenida", group: "hitos", name: "¡Bienvenido!", rarity: "bronce", motif: flagWelcome,
+    flavor: "Tu primer día en Fechita. Esto recién arranca.",
+    criterio: "Entrar a Fechita por primera vez" },
   { id: "ganador", group: "hitos", name: "Ganador de la fecha", rarity: "oro", motif: laurelOne,
     flavor: "Terminaste 1° de tu grupo. La fecha fue tuya.",
     criterio: "Salir 1° de tu grupo al cerrar una fecha" },

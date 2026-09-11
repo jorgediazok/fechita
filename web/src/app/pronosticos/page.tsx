@@ -16,18 +16,21 @@ import {
   postponeMockMatch,
   dismissBadges,
   dismissStreak,
+  dismissWelcome,
 } from "./actions";
 import { MatchPredictor } from "./MatchPredictor";
 import { RoundProgress } from "./RoundProgress";
 import { PushNudge } from "@/components/PushClient";
 import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
-import { TriviaCard } from "@/components/TriviaCard";
+import { TriviaModal } from "@/components/TriviaModal";
 import { getTriviaState } from "@/lib/trivia";
 import { canParticipate } from "@/lib/emailVerification";
+import { isPendingWelcome } from "@/lib/welcome";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
 import { StreakCelebration } from "@/components/StreakCelebration";
+import { WelcomeOverlay } from "@/components/WelcomeOverlay";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
 import { currentRoundStreak } from "@/lib/badges/award";
 import { getPendingStreak } from "@/lib/profile";
@@ -92,6 +95,10 @@ export default async function PronosticosPage({
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
   const verified = canParticipate(user);
+  // Primera visita real a /pronosticos (ver lib/welcome.ts) — tapa la pantalla con
+  // WelcomeOverlay en vez del contenido normal, y hasta que la cierre no se le muestra la
+  // trivia del día (out of context para alguien que ni sabe cómo se juega todavía).
+  const pendingWelcome = isPendingWelcome(user);
 
   // Preview dev (mock): forzar el festejo de racha desde la URL para poder verlo sin cerrar
   // una fecha. Ej: /pronosticos?festejoRacha=4
@@ -140,8 +147,9 @@ export default async function PronosticosPage({
     // Racha de fechas (misma que las insignias de fuego).
     currentRoundStreak(user._id),
 
-    // Trivia del día — solo si puede participar (ver VerifyEmailNudge más abajo).
-    verified ? getTriviaState(user._id) : Promise.resolve(null),
+    // Trivia del día — solo si puede participar (ver VerifyEmailNudge más abajo) y ya vio
+    // la bienvenida (si no, ni se pide: quedaría out of context).
+    verified && !pendingWelcome ? getTriviaState(user._id) : Promise.resolve(null),
   ]);
 
   const { group, ranked, members: memberUsers } = leagueData;
@@ -150,6 +158,13 @@ export default async function PronosticosPage({
 
   // El festejo de racha cede el paso al de insignias — si hay una insignia sin ver, va después.
   const pendingStreak = unseenBadges.length === 0 ? await getPendingStreak(user._id) : null;
+
+  // La trivia se abre sola al entrar solo si no hay nada de más prioridad tapando la
+  // pantalla — el ícono en el hero siempre queda como entrada manual mientras no la
+  // respondió (ver TriviaModal).
+  const autoOpenTrivia = Boolean(
+    triviaState && !triviaState.answered && !previewStreak && unseenBadges.length === 0 && !pendingStreak
+  );
 
   // "En juego": tenés racha pero todavía no cargaste los 3 pronósticos mínimos de la fecha
   // en curso que hacen falta para que cuente (STREAK_MIN_PREDICTIONS en lib/badges/award).
@@ -215,7 +230,9 @@ export default async function PronosticosPage({
     <PhoneFrame
       nav={<BottomNav active="pronosticos" />}
       overlay={
-        previewStreak ? (
+        pendingWelcome ? (
+          <WelcomeOverlay action={dismissWelcome} />
+        ) : previewStreak ? (
           <StreakCelebration streak={previewStreak} action={dismissStreak} />
         ) : unseenBadges.length > 0 ? (
           <BadgeUnlockOverlay badges={unseenBadges} action={dismissBadges} />
@@ -243,7 +260,10 @@ export default async function PronosticosPage({
         >
           <div className="flex items-center justify-between gap-2 text-[#F5F5FF]">
             <StreakInfo streak={streak} atRisk={streakAtRisk} />
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              {triviaState && <TriviaModal initial={triviaState} autoOpen={autoOpenTrivia} />}
+              <NotificationBell />
+            </div>
           </div>
 
           {totalPlayers > 0 && (
@@ -320,8 +340,6 @@ export default async function PronosticosPage({
       )}
 
       <PushNudge />
-
-      {triviaState && <TriviaCard initial={triviaState} />}
 
       {/* tu lugar en la tabla — sin sentido si nadie sumó todavía */}
       {totalPoints > 0 && nearby.length > 1 && (

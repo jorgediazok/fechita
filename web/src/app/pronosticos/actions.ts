@@ -17,6 +17,7 @@ import { isEmailVerified, canParticipate, sendVerificationEmail } from "@/lib/em
 import { checkRateLimit } from "@/lib/rateLimit";
 import { answerTrivia, type AnswerTriviaResult } from "@/lib/trivia";
 import { evaluateBadgesForUser } from "@/lib/badges/award";
+import { completeWelcome } from "@/lib/welcome";
 
 export async function submitDirection(matchId: string, direction: string) {
   const user = await getCurrentUser();
@@ -122,6 +123,15 @@ export async function dismissStreak() {
   if (!user) redirect("/login");
   await markStreakSeen(user._id);
   redirect("/pronosticos");
+}
+
+// Cierra el WelcomeOverlay: marca la bienvenida vista y otorga la insignia "bienvenida" (ya
+// vista, el propio overlay fue el festejo). Ver lib/welcome.ts.
+export async function dismissWelcome() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  await completeWelcome(user._id);
+  revalidatePath("/pronosticos");
 }
 
 export type ResendVerificationState = { sent?: boolean; error?: string };
