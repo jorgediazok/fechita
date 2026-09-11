@@ -39,10 +39,10 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
             clipPath: "polygon(0 0, 100% 0, 100% 90%, 0 100%)",
           }}
         >
-          <div className="flex items-center justify-between text-[#0B0C16]">
+          <div className="flex items-center justify-between text-white">
             <Link href="/grupos" aria-label="Volver a mis grupos" className="rounded-lg">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M15 18l-6-6 6-6" stroke="#0B0C16" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M15 18l-6-6 6-6" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
             <h1 className="font-display text-lg">{group.name.toUpperCase()}</h1>
