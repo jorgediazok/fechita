@@ -1,5 +1,5 @@
 /**
- * Crea/actualiza los 20 usuarios bot y les carga los pronósticos de la ventana actual.
+ * Crea/actualiza los 50 usuarios bot y les carga los pronósticos de la ventana actual.
  *
  *   npm run seed:bots
  *

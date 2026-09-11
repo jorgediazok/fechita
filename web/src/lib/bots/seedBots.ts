@@ -11,7 +11,7 @@ function skillFor(index: number) {
   return Math.round((0.45 + (index / (BOT_NAMES.length - 1)) * 0.42) * 100) / 100;
 }
 
-// Los bots nuevos se reparten parejo por categoría (4 por tier con 20 bots) para que ni
+// Los bots nuevos se reparten parejo por categoría (10 por tier con 50 bots) para que ni
 // bien arranca haya con quién competir en todas las divisiones, no solo en la D. Después
 // cada uno sube o baja por su cuenta según cómo le vaya.
 function tierFor(index: number) {
