@@ -45,6 +45,20 @@ body {
   border-radius: 3px;
 }
 
+/* Safari (sobre todo iOS) fuerza texto negro y fondo claro en un input autocompletado por el
+   navegador/gestor de contraseñas, pisando cualquier color que le hayamos puesto — se ve sobre
+   todo en /signup y /login, con el nombre/email autocompletados. El truco es clásico: un
+   transition-delay altísimo en background-color evita que el fondo forzado llegue a pintarse,
+   y -webkit-text-fill-color pisa el negro forzado del texto. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Respeta "reducir movimiento" del sistema: animaciones y transiciones al mínimo. */
 @media (prefers-reduced-motion: reduce) {
   *,

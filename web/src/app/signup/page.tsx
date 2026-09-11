@@ -33,10 +33,10 @@ export default async function SignupPage() {
         }}
       >
         <div className="flex flex-col items-center gap-3">
-          <h1 className="font-display text-[28px] leading-none text-[#0B0C16]">
+          <h1 className="font-display text-[28px] leading-none text-white">
             CREAR CUENTA
           </h1>
-          <p className="text-center text-[13px] font-bold text-[#0B0C16]/70">
+          <p className="text-center text-[13px] font-bold text-white/70">
             Pronosticá. Sumá puntos. Bancá a tu club.
           </p>
         </div>

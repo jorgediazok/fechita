@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { qrSvg } from "@/lib/qr";
+import { BrandMark } from "@/components/BrandMark";
 
 export const metadata: Metadata = {
   title: { absolute: `${SITE_NAME} · Prode de fútbol argentino` },
@@ -71,11 +72,7 @@ export default async function Home() {
       <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-6 py-8 sm:px-8 sm:py-10">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-[#0B0C16]">
-              <svg width="18" height="18" viewBox="0 -960 960 960" fill="#FFFFFF" aria-hidden="true">
-                <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm200-500 54-18 16-54q-32-48-77-82.5T574-786l-54 38v56l160 112Zm-400 0 160-112v-56l-54-38q-54 17-99 51.5T210-652l16 54 54 18Zm-42 308 46-4 30-54-58-174-56-20-40 30q0 65 18 118.5T238-272Zm293 108q25-4 49-12l28-60-26-44H378l-26 44 28 60q24 8 49 12t51 4q26 0 51-4ZM390-360h180l56-160-146-102-144 102 54 160Zm332 88q42-50 60-103.5T800-494l-40-28-56 18-58 174 30 54 46 4Z" />
-              </svg>
-            </span>
+            <BrandMark size={32} />
             <span className="font-display text-lg tracking-wide">{SITE_NAME.toUpperCase()}</span>
           </div>
           <Link href="/login" className="rounded-full px-4 py-2 text-sm font-extrabold text-[#A390FF] hover:text-white">

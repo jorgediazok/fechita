@@ -16,7 +16,10 @@ export function ClubPicker({
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="font-display text-sm tracking-wide text-white">{legend}</legend>
+      {/* mb-3 en vez de confiar en el gap del fieldset: un <legend> queda fuera del flujo de
+          flex/grid en todos los navegadores, así que el `gap` del <fieldset> no se aplica
+          después de él — sin este margen queda pegado a la grilla. */}
+      <legend className="mb-3 font-display text-sm tracking-wide text-white">{legend}</legend>
       <div className="grid grid-cols-4 gap-x-2 gap-y-4">
         {teams.map((team) => {
           const id = String(team._id);
@@ -29,7 +32,11 @@ export function ClubPicker({
                 defaultChecked={id === checkedId}
                 className="peer sr-only"
               />
-              <span className="flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full bg-[#15162A] shadow-[0_0_0_2px_#2A2C48] transition-transform peer-checked:-rotate-6 peer-checked:shadow-[0_0_0_3px_#7C5CFF] peer-checked:[filter:drop-shadow(0_0_10px_rgba(124,92,255,0.65))] peer-focus-visible:shadow-[0_0_0_3px_#A390FF]">
+              {/* will-change-transform: fuerza su propia capa de composición. Sin esto, en
+                  iOS Safari una grilla larga de círculos recortados (overflow-hidden +
+                  rounded-full) puede parpadear o desaparecer un instante durante el scroll
+                  con inercia — un bug de repintado conocido de WebKit, no algo del layout. */}
+              <span className="flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full bg-[#15162A] shadow-[0_0_0_2px_#2A2C48] transition-transform will-change-transform peer-checked:-rotate-6 peer-checked:shadow-[0_0_0_3px_#7C5CFF] peer-checked:[filter:drop-shadow(0_0_10px_rgba(124,92,255,0.65))] peer-focus-visible:shadow-[0_0_0_3px_#A390FF]">
                 {team.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
