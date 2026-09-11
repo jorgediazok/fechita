@@ -414,7 +414,7 @@ export default async function PronosticosPage({
       )}
 
       {/* feed */}
-      <div className="flex flex-col gap-3.5 px-4.5 pb-6">
+      <div className="flex flex-col gap-3.5 px-4.5 pt-2 pb-6">
         {visibleRounds.map(([round, roundMatches]) => {
           const isCurrentRound = round === group.roundKey;
           const roundHasPending = roundMatches.some((m) => m.status !== "finished");
