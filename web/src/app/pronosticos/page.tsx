@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import PredictionModel from "@/models/Prediction";
 import UserModel from "@/models/User";
-import { isWithinDays, isWithinPastDays } from "@/lib/time";
+import { isWithinDays, isWithinPastDays, isPredictionLocked } from "@/lib/time";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { TeamBadge } from "@/components/TeamBadge";
 import { BottomNav } from "@/components/BottomNav";
@@ -20,6 +20,7 @@ import {
 } from "./actions";
 import { MatchPredictor } from "./MatchPredictor";
 import { RoundProgress } from "./RoundProgress";
+import { RoundCompleteToast } from "./RoundCompleteToast";
 import { PushNudge } from "@/components/PushClient";
 import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
 import { TriviaModal } from "@/components/TriviaModal";
@@ -170,6 +171,12 @@ export default async function PronosticosPage({
   const currentRoundMatches = matches.filter((m) => m.round === group.roundKey);
   const predictedInRound = currentRoundMatches.filter((m) =>
     predictionByMatch.has(String(m._id))
+  ).length;
+  // Denominador real de "cuánto llevás cargado": un partido que arrancó sin que llegaras a
+  // pronosticarlo ya no se puede completar — si el total sigue contando esos partidos
+  // perdidos, la barra nunca llega a 100% aunque el usuario haya cargado todo lo que podía.
+  const predictableInRound = currentRoundMatches.filter(
+    (m) => predictionByMatch.has(String(m._id)) || !isPredictionLocked(m.kickoffAt)
   ).length;
   const streakAtRisk =
     streak > 0 && predictedInRound < Math.min(3, currentRoundMatches.length);
@@ -421,7 +428,14 @@ export default async function PronosticosPage({
               <RoundProgress
                 roundKey={round}
                 predicted={predictedInRound}
-                total={currentRoundMatches.length}
+                total={predictableInRound}
+              />
+            )}
+
+            {isCurrentRound && (
+              <RoundCompleteToast
+                roundKey={round}
+                done={predictableInRound > 0 && predictedInRound >= predictableInRound}
               />
             )}
 
