@@ -149,7 +149,10 @@ export default async function Home() {
         </main>
 
         <footer className="border-t border-[#1F2038] pt-5 text-xs font-bold text-[#8A8FB2]">
-          {SITE_NAME} · Hecho para el hincha argentino.
+          {SITE_NAME} · Hecho para el hincha argentino. ·{" "}
+          <Link href="/legal" className="underline">
+            Términos y privacidad
+          </Link>
         </footer>
       </div>
     </div>
