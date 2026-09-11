@@ -23,6 +23,8 @@ import {
 } from "@/lib/leagues";
 import { closeRoundNow, acknowledgeResult } from "./actions";
 import { isMockMode as runningInMockMode } from "@/lib/fixtures/source";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { ShareButton } from "@/components/ShareButton";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -64,6 +66,32 @@ export default async function LigaPage() {
   const myIndex = populated.findIndex((r) => String(r.membership.userId) === String(user._id));
 
   const promoted = pendingResult?.result === "promoted";
+  const relegated = pendingResult?.result === "relegated";
+  const stayed = pendingResult?.result === "stayed";
+  const finalPosition = pendingResult
+    ? pendingResult.standings.findIndex((s) => s.userId === String(user._id)) + 1
+    : 0;
+  const shareText = pendingResult
+    ? promoted
+      ? `¡Ascendí a ${TIER_FULL_NAMES[tier]} en ${SITE_NAME}! Terminé la ${pendingResult.roundKey} con ${pendingResult.points} pts.`
+      : relegated
+        ? `Bajé a ${TIER_FULL_NAMES[tier]} en ${SITE_NAME} — la ${pendingResult.roundKey} no fue la mía (${pendingResult.points} pts). La próxima remonto.`
+        : `Terminé ${finalPosition}° en ${TIER_FULL_NAMES[tier]} con ${pendingResult.points} pts en la ${pendingResult.roundKey} de ${SITE_NAME}.`
+    : "";
+  // "stayed" (no ascendiste ni descendiste) usa el violeta de marca en vez del dorado de
+  // ascenso o el rojo de descenso — es una noticia neutra, no buena ni mala.
+  const accentColor = promoted ? "#FFD75E" : relegated ? "#FF4D6D" : "#A390FF";
+  const accentGlow = promoted
+    ? "rgba(255,255,255,0.55)"
+    : relegated
+      ? "rgba(255,77,109,0.4)"
+      : "rgba(124,92,255,0.35)";
+  const accentBg = promoted ? "rgba(255,255,255,0.2)" : relegated ? "rgba(255,77,109,0.16)" : "rgba(124,92,255,0.16)";
+  const accentShadow = promoted
+    ? "0 0 50px rgba(255,255,255,0.4)"
+    : relegated
+      ? "0 0 40px rgba(255,77,109,0.35)"
+      : "0 0 40px rgba(124,92,255,0.35)";
 
   return (
     <PhoneFrame
@@ -97,7 +125,7 @@ export default async function LigaPage() {
               .lg-anim-glow { animation: lg-glow-pulse 2.4s ease-in-out infinite; }
             `}</style>
 
-            {!promoted && (
+            {relegated && (
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{ background: "radial-gradient(circle at 50% 26%, rgba(255,77,109,0.22), transparent 65%)" }}
@@ -108,41 +136,45 @@ export default async function LigaPage() {
               <div className="relative flex h-28 w-28 items-center justify-center">
                 <div
                   className="lg-anim-glow absolute inset-0 rounded-full"
-                  style={{
-                    background: promoted
-                      ? "radial-gradient(circle, rgba(255,255,255,0.55), transparent 70%)"
-                      : "radial-gradient(circle, rgba(255,77,109,0.4), transparent 70%)",
-                  }}
+                  style={{ background: `radial-gradient(circle, ${accentGlow}, transparent 70%)` }}
                 />
                 <div
                   className="lg-anim-pop relative flex h-24 w-24 items-center justify-center rounded-full"
-                  style={{
-                    background: promoted ? "rgba(255,255,255,0.2)" : "rgba(255,77,109,0.16)",
-                    boxShadow: promoted ? "0 0 50px rgba(255,255,255,0.4)" : "0 0 40px rgba(255,77,109,0.35)",
-                  }}
+                  style={{ background: accentBg, boxShadow: accentShadow }}
                 >
-                  <svg width="46" height="46" viewBox={promoted ? "0 0 576 512" : "0 0 512 512"} fill={promoted ? "#FFD75E" : "#FF4D6D"}>
-                    {promoted ? (
-                      <path d="M400 0L176 0c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8L24 64C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9L192 448c-17.7 0-32 14.3-32 32s14.3 32 32 32l192 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-26.1 0C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24L446.4 64c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112l84.4 0c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6l84.4 0c-5.1 66.3-31.1 111.2-63 142.3z" />
-                    ) : (
-                      <path d="M0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zm240 80c0-8.8 7.2-16 16-16c45 0 85.6 20.5 115.7 53.1c6 6.5 5.6 16.6-.9 22.6s-16.6 5.6-22.6-.9c-25-27.1-57.4-42.9-92.3-42.9c-8.8 0-16-7.2-16-16zm-80 80c-26.5 0-48-21-48-47c0-20 28.6-60.4 41.6-77.7c3.2-4.4 9.6-4.4 12.8 0C179.6 308.6 208 349 208 369c0 26-21.5 47-48 47zM367.6 208a32 32 0 1 1 -64 0 32 32 0 1 1 64 0zm-192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
-                    )}
-                  </svg>
+                  {stayed ? (
+                    <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke={accentColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="46" height="46" viewBox={promoted ? "0 0 576 512" : "0 0 512 512"} fill={accentColor}>
+                      {promoted ? (
+                        <path d="M400 0L176 0c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8L24 64C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9L192 448c-17.7 0-32 14.3-32 32s14.3 32 32 32l192 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-26.1 0C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24L446.4 64c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112l84.4 0c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6l84.4 0c-5.1 66.3-31.1 111.2-63 142.3z" />
+                      ) : (
+                        <path d="M0 256a256 256 0 1 0 512 0A256 256 0 1 0 0 256zm240 80c0-8.8 7.2-16 16-16c45 0 85.6 20.5 115.7 53.1c6 6.5 5.6 16.6-.9 22.6s-16.6 5.6-22.6-.9c-25-27.1-57.4-42.9-92.3-42.9c-8.8 0-16-7.2-16-16zm-80 80c-26.5 0-48-21-48-47c0-20 28.6-60.4 41.6-77.7c3.2-4.4 9.6-4.4 12.8 0C179.6 308.6 208 349 208 369c0 26-21.5 47-48 47zM367.6 208a32 32 0 1 1 -64 0 32 32 0 1 1 64 0zm-192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                      )}
+                    </svg>
+                  )}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <div
                   className="lg-anim-fade font-display text-[32px] leading-none"
-                  style={{ color: promoted ? "#FFFFFF" : "#FF4D6D", animationDelay: "150ms" }}
+                  style={{
+                    color: promoted ? "#FFFFFF" : relegated ? "#FF4D6D" : "#E4E6F7",
+                    animationDelay: "150ms",
+                  }}
                 >
-                  {promoted ? "¡ASCENDISTE!" : "DESCENDISTE"}
+                  {promoted ? "¡ASCENDISTE!" : relegated ? "DESCENDISTE" : `TERMINASTE ${finalPosition}°`}
                 </div>
                 <div
                   className="lg-anim-fade text-sm font-extrabold"
                   style={{ color: promoted ? "rgba(255,255,255,0.85)" : "#9195C2", animationDelay: "220ms" }}
                 >
-                  De {TIER_FULL_NAMES[pendingResult.oldTier]} a {TIER_FULL_NAMES[tier]}
+                  {stayed
+                    ? `Seguís en ${TIER_FULL_NAMES[tier]} · ${pendingResult.points} pts`
+                    : <>De {TIER_FULL_NAMES[pendingResult.oldTier]} a {TIER_FULL_NAMES[tier]}</>}
                 </div>
               </div>
             </div>
@@ -200,7 +232,11 @@ export default async function LigaPage() {
               </div>
             </div>
 
-            <form action={acknowledgeResult} className="lg-anim-fade relative mt-6 flex-shrink-0" style={{ animationDelay: "620ms" }}>
+            <div className="lg-anim-fade relative mt-6 w-full max-w-[340px] flex-shrink-0" style={{ animationDelay: "560ms" }}>
+              <ShareButton text={shareText} url={SITE_URL} label="Compartir resultado" />
+            </div>
+
+            <form action={acknowledgeResult} className="lg-anim-fade relative mt-2.5 flex-shrink-0" style={{ animationDelay: "620ms" }}>
               <input type="hidden" name="membershipId" value={pendingResult.membershipId} />
               <button
                 type="submit"
@@ -209,7 +245,7 @@ export default async function LigaPage() {
                   background: promoted ? "#0B0C16" : "linear-gradient(135deg, #6845E0, #9B5CFF)",
                 }}
               >
-                {promoted ? "SEGUIR JUGANDO" : "DALE, VAMOS DE NUEVO"}
+                {promoted ? "SEGUIR JUGANDO" : relegated ? "DALE, VAMOS DE NUEVO" : "DALE, SEGUIMOS"}
               </button>
             </form>
           </div>
