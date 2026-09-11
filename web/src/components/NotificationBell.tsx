@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 import {
   fetchNotifications,
   markNotificationsRead,
@@ -32,6 +33,8 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<FeedNotification[]>([]);
   const [unread, setUnread] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(open, dialogRef);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +106,9 @@ export function NotificationBell() {
       {open &&
         createPortal(
         <div
-          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5"
+          ref={dialogRef}
+          tabIndex={-1}
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5 focus:outline-none"
           role="dialog"
           aria-modal="true"
           aria-label="Novedades"

@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 
 // Chip de racha del hero de /pronosticos + modal que explica qué es y cómo se consigue.
 // La regla real vive en lib/badges/award.ts (`currentRoundStreak`): una fecha suma si
 // cargaste ≥3 pronósticos y acertaste más de la mitad; si una no cumple, vuelve a 0.
 export function StreakInfo({ streak, atRisk }: { streak: number; atRisk: boolean }) {
   const [open, setOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(open, dialogRef);
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +52,9 @@ export function StreakInfo({ streak, atRisk }: { streak: number; atRisk: boolean
       {open &&
         createPortal(
         <div
-          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5"
+          ref={dialogRef}
+          tabIndex={-1}
+          className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5 focus:outline-none"
           role="dialog"
           aria-modal="true"
           aria-label="Tu racha"

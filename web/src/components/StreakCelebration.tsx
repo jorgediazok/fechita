@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 // Festejo cuando la racha de fechas crece (calcado del anuncio de ascenso de /liga):
 // fondo naranja, llama que entra con un resorte, el número nuevo, brasas subiendo.
@@ -12,10 +12,17 @@ export function StreakCelebration({
   action: () => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   return (
     <div
-      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-7 overflow-y-auto px-6 py-10 text-center"
+      ref={dialogRef}
+      tabIndex={-1}
+      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-7 overflow-y-auto px-6 py-10 text-center focus:outline-none"
       style={{ background: "linear-gradient(165deg, #2A160B 0%, #14100B 55%, #0B0C16 100%)" }}
       role="dialog"
       aria-modal="true"

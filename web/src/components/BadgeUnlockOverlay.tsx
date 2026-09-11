@@ -33,6 +33,15 @@ export function BadgeUnlockOverlay({
   const [pending, startTransition] = useTransition();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  // Solo al montar — PhoneFrame ya deja inertes el <main>/nav de atrás mientras este overlay
+  // esté puesto (ver PhoneFrame.tsx), esto es lo que falta: anunciarlo y pararse adentro. No
+  // debe repetirse al pasar de una insignia a la siguiente (perdería el foco del botón recién
+  // tocado).
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   const badge = badges[index];
   const isLast = index >= badges.length - 1;
@@ -126,7 +135,9 @@ export function BadgeUnlockOverlay({
 
   return (
     <div
-      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-7 overflow-y-auto px-6 py-10 text-center"
+      ref={dialogRef}
+      tabIndex={-1}
+      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-7 overflow-y-auto px-6 py-10 text-center focus:outline-none"
       style={{ background: "linear-gradient(165deg, #14102b 0%, #0b0c16 60%)" }}
       role="dialog"
       aria-modal="true"

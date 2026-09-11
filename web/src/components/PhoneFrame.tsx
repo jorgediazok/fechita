@@ -35,10 +35,21 @@ export function PhoneFrame({
           .no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
         `}</style>
         <PushRegistrar />
-        <main id="contenido" className="no-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        {/* Mientras hay un overlay a pantalla completa (ascenso/descenso, insignia nueva,
+            bienvenida), el contenido y el nav de atrás quedan inertes — nada de Tab ni de
+            lector de pantalla los alcanza tapados por el overlay. `contents` en el wrapper del
+            nav lo saca del layout (para no romper que sea flex item directo de #phone-frame)
+            sin sacarlo del DOM, que es donde `inert` necesita agarrarlo. */}
+        <main
+          id="contenido"
+          className="no-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+          inert={overlay ? true : undefined}
+        >
           {children}
         </main>
-        {nav}
+        <div className="contents" inert={overlay ? true : undefined}>
+          {nav}
+        </div>
         {/* Igual que el nav, hermano del contenedor con scroll — así un overlay a pantalla
             completa (ej. anuncio de ascenso/descenso) no se corta ni se scrollea con el
             contenido de abajo. */}

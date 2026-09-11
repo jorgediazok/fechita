@@ -1,15 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import { qrSvg } from "@/lib/qr";
 import { BrandMark } from "@/components/BrandMark";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: { absolute: `${SITE_NAME} · Prode de fútbol argentino` },
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(
+  _props: PageProps<"/">,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return pageMetadata(parent, {
+    title: `${SITE_NAME} · Prode de fútbol argentino`,
+    description: SITE_DESCRIPTION,
+    path: "/",
+    absoluteTitle: true,
+  });
+}
 
 const FEATURES = [
   {
@@ -50,8 +58,29 @@ export default async function Home() {
 
   const qr = await qrSvg(`${SITE_URL}/login`);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    applicationCategory: "SportsApplication",
+    operatingSystem: "Web",
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "ARS" },
+    inLanguage: "es-AR",
+  };
+
   return (
     <div className="min-h-dvh overflow-hidden bg-[#0B0C16] text-[#E4E6F7]">
+      {/* SoftwareApplication en vez de Organization: no hay una organización real detrás
+          todavía (dominio propio ni siquiera registrado, ver lib/site.ts) — esto describe el
+          producto sin inventar una entidad legal. Sin aggregateRating/review: no hay reseñas
+          reales y Google penaliza el structured data con datos inventados. */}
+      <script
+        type="application/ld+json"
+        // JSON.stringify de un objeto propio, sin input de usuario — no hay riesgo de inyección.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <style>{`
         @keyframes lp-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes lp-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
@@ -69,6 +98,13 @@ export default async function Home() {
         }}
       />
 
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-[#7C5CFF] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+      >
+        Saltar al contenido
+      </a>
+
       <div className="relative mx-auto flex min-h-dvh w-full max-w-7xl flex-col px-6 py-8 sm:px-8 sm:py-10">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -80,7 +116,7 @@ export default async function Home() {
           </Link>
         </header>
 
-        <main className="flex flex-1 flex-col justify-start pt-[8vh] pb-8 lg:pt-[10vh]">
+        <main id="contenido" className="flex flex-1 flex-col justify-start pt-[8vh] pb-8 lg:pt-[10vh]">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
             <div className="lp-in text-center md:text-left">
               <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">
@@ -111,7 +147,10 @@ export default async function Home() {
               <div className="mt-6 flex items-center justify-center gap-3 md:justify-start">
                 <div
                   className="h-16 w-16 shrink-0 rounded-lg bg-white p-1 [&_svg]:h-full [&_svg]:w-full"
+                  aria-hidden="true"
                   // El SVG lo genera la librería qrcode a partir de SITE_URL, no de input de usuario.
+                  // Decorativo a los fines de accesibilidad: el párrafo de al lado ya explica
+                  // qué es y para qué sirve, no hace falta que un lector de pantalla lo anuncie aparte.
                   dangerouslySetInnerHTML={{ __html: qr }}
                 />
                 <p className="text-xs font-bold text-[#8A8FB2]">

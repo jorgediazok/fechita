@@ -1,16 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { connectToDatabase } from "@/lib/db";
 import TeamModel from "@/models/Team";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { SignupForm } from "./SignupForm";
 import type { PickerTeam } from "@/components/ClubPicker";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Crear cuenta",
-  description:
-    "Creá tu cuenta gratis, elegí tu club y empezá a pronosticar la fecha del fútbol argentino con tu liga.",
-  alternates: { canonical: "/signup" },
-};
+export async function generateMetadata(
+  _props: PageProps<"/signup">,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return pageMetadata(parent, {
+    title: "Crear cuenta",
+    description:
+      "Creá tu cuenta gratis, elegí tu club y empezá a pronosticar la fecha del fútbol argentino con tu liga.",
+    path: "/signup",
+  });
+}
 
 export default async function SignupPage() {
   await connectToDatabase();
