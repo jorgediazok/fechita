@@ -26,6 +26,12 @@ const UserSchema = new Schema({
   isBot: { type: Boolean, default: false },
   botSkill: { type: Number },
   createdAt: { type: Date, default: Date.now },
+  // null = todavía no vio la bienvenida. Se setea en la primera visita real a /pronosticos
+  // (no en /onboarding: los usuarios de Credentials eligen club en /signup y nunca pasan por
+  // ahí — el punto en común de los dos caminos de alta es la primera vez que llegan a la
+  // pantalla principal). Mientras esté en null: no se muestra la trivia del día (ver
+  // lib/welcome.ts) y /pronosticos muestra el overlay de bienvenida en vez del contenido.
+  welcomedAt: { type: Date, default: null },
 });
 
 export type User = InferSchemaType<typeof UserSchema>;
