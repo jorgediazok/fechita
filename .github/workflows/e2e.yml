@@ -1,0 +1,59 @@
+# Corre el loop central end-to-end (login real + cargar pronóstico + puntaje) con Playwright,
+# siempre en modo mock (sin red, sin tocar The Odds API) contra un Mongo efímero del propio job.
+# Ver web/e2e/ y "Tests" en CLAUDE.md.
+name: e2e
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Sin secrets reales: mock no llama a ninguna API externa y este Mongo vive y muere con
+      # el job. AUTH_SECRET es cualquier valor fijo, no necesita ser secreto en CI.
+      - name: Configurar env de CI
+        run: |
+          cat > .env.local <<'EOF'
+          MONGODB_URI=mongodb://localhost:27017/fechita-e2e
+          FIXTURE_SOURCE=mock
+          AUTH_SECRET=e2e-ci-secret
+          EOF
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7

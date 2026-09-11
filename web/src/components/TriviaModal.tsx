@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { answerTriviaAction } from "@/app/pronosticos/actions";
 import type { TriviaState } from "@/lib/trivia";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 
 // Ícono de trivia en el hero de /pronosticos (al lado de la campanita) + el modal en sí,
 // autocontenido igual que StreakInfo.tsx (ancla centrada vía createPortal, no full-screen —
@@ -28,6 +29,11 @@ export function TriviaModal({ initial, autoOpen }: { initial: TriviaState; autoO
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMountedOnClient(true);
   }, []);
+
+  // Recién activo cuando el portal ya está montado de verdad (ver comentario arriba) — si
+  // no, el primer intento de foco cae en un ref todavía null.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(open && mountedOnClient, dialogRef);
 
   useEffect(() => {
     if (!open) return;
@@ -83,7 +89,9 @@ export function TriviaModal({ initial, autoOpen }: { initial: TriviaState; autoO
         mountedOnClient &&
         createPortal(
           <div
-            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-3"
+            ref={dialogRef}
+            tabIndex={-1}
+            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-3 focus:outline-none"
             role="dialog"
             aria-modal="true"
             aria-label="Trivia del día"

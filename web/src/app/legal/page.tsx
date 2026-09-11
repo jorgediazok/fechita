@@ -1,15 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { BottomNav } from "@/components/BottomNav";
 import { SITE_NAME, CONTACT_EMAIL } from "@/lib/site";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Términos y privacidad",
-  description: "Términos de uso y política de privacidad.",
-  alternates: { canonical: "/legal" },
-};
+export async function generateMetadata(
+  _props: PageProps<"/legal">,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return pageMetadata(parent, {
+    title: "Términos y privacidad",
+    description: "Términos de uso y política de privacidad.",
+    path: "/legal",
+  });
+}
 
 type Section = { title: string; body: React.ReactNode };
 

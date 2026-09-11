@@ -1,16 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { loginWithGoogle } from "./actions";
 import { LoginForm } from "./LoginForm";
 import { SITE_NAME } from "@/lib/site";
 import { BrandMark } from "@/components/BrandMark";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Entrar",
-  description: "Entrá a tu cuenta para cargar los pronósticos de la fecha y ver cómo vas en tu liga.",
-  alternates: { canonical: "/login" },
-};
+export async function generateMetadata(
+  _props: PageProps<"/login">,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return pageMetadata(parent, {
+    title: "Entrar",
+    description: "Entrá a tu cuenta para cargar los pronósticos de la fecha y ver cómo vas en tu liga.",
+    path: "/login",
+  });
+}
 
 export default function LoginPage() {
   return (

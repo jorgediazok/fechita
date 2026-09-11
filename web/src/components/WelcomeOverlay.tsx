@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { RARITY } from "@/lib/badges/catalog";
 import { Badge } from "./Badge";
 import { SITE_NAME } from "@/lib/site";
@@ -15,10 +15,17 @@ import { SITE_NAME } from "@/lib/site";
 export function WelcomeOverlay({ action }: { action: () => Promise<void> }) {
   const [pending, startTransition] = useTransition();
   const r = RARITY.bronce;
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   return (
     <div
-      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-10 text-center"
+      ref={dialogRef}
+      tabIndex={-1}
+      className="no-scrollbar absolute inset-0 z-50 flex flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-10 text-center focus:outline-none"
       style={{ background: "linear-gradient(165deg, #14102b 0%, #0b0c16 60%)" }}
       role="dialog"
       aria-modal="true"

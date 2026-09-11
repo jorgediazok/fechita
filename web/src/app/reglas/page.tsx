@@ -1,15 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { BottomNav } from "@/components/BottomNav";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Cómo se juega",
-  description:
-    "Las reglas del prode: cómo se cargan los pronósticos, cómo se suman puntos y cómo funciona la liga por fecha con ascensos y descensos.",
-  alternates: { canonical: "/reglas" },
-};
+export async function generateMetadata(
+  _props: PageProps<"/reglas">,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return pageMetadata(parent, {
+    title: "Cómo se juega",
+    description:
+      "Las reglas del prode: cómo se cargan los pronósticos, cómo se suman puntos y cómo funciona la liga por fecha con ascensos y descensos.",
+    path: "/reglas",
+  });
+}
 
 type Rule = { n: string; title: string; body: React.ReactNode };
 
