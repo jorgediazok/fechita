@@ -33,10 +33,10 @@ export default async function OnboardingPage() {
         }}
       >
         <div className="flex flex-col items-center gap-3">
-          <h1 className="font-display text-[26px] leading-tight text-[#0B0C16]">
+          <h1 className="font-display text-[26px] leading-tight text-white">
             ¿DE QUÉ CUADRO SOS?
           </h1>
-          <p className="text-center text-[13px] font-bold text-[#0B0C16]/70">
+          <p className="text-center text-[13px] font-bold text-white/70">
             Un último paso antes de arrancar
           </p>
         </div>
