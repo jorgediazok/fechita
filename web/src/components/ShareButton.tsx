@@ -4,7 +4,15 @@ import { useState } from "react";
 
 // Compartir el perfil: usa el share nativo del sistema si está (mobile), y si no copia el
 // texto al portapapeles. Texto e URL vienen del server (nombre y dominio del sitio).
-export function ShareButton({ text, url }: { text: string; url: string }) {
+export function ShareButton({
+  text,
+  url,
+  label = "Compartir mi perfil",
+}: {
+  text: string;
+  url: string;
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -31,7 +39,7 @@ export function ShareButton({ text, url }: { text: string; url: string }) {
       onClick={share}
       className="w-full rounded-2xl bg-[#1F2038] py-3.5 text-sm font-bold text-[#9195C2]"
     >
-      {copied ? "¡Copiado!" : "Compartir mi perfil"}
+      {copied ? "¡Copiado!" : label}
     </button>
   );
 }

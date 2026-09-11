@@ -258,12 +258,12 @@ export async function closeExpiredGroups() {
   }
 }
 
-// Anuncio de ascenso/descenso pendiente de ver (una sola vez por resultado). "stayed" no
-// genera anuncio, solo promoted/relegated.
+// Anuncio de cierre de fecha pendiente de ver (una sola vez por resultado) — ascenso,
+// descenso, o "te quedaste" (mismo aviso, tono neutro, sin la fanfarria de los otros dos).
 export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
   const membership = await LeagueMembershipModel.findOne({
     userId,
-    result: { $in: ["promoted", "relegated"] },
+    result: { $in: ["promoted", "relegated", "stayed"] },
     resultAcknowledged: { $ne: true },
   }).sort({ createdAt: -1 });
   if (!membership) return null;
@@ -288,7 +288,8 @@ export async function getPendingLeagueResult(userId: Types.ObjectId | string) {
 
   return {
     membershipId: String(membership._id),
-    result: membership.result as "promoted" | "relegated",
+    result: membership.result as "promoted" | "relegated" | "stayed",
+    wonRound: Boolean(membership.wonRound),
     oldTier: group.tier as TierCode,
     roundKey: group.roundKey,
     points: membership.points,
