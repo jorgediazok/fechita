@@ -39,7 +39,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         await connectToDatabase();
         let dbUser = await UserModel.findOne({ email });
         if (!dbUser) {
-          dbUser = await UserModel.create({ name: user.name ?? email, email });
+          // Google ya verificó que el dueño de la cuenta controla este email.
+          dbUser = await UserModel.create({ name: user.name ?? email, email, emailVerified: new Date() });
+        } else if (!dbUser.emailVerified) {
+          dbUser.emailVerified = new Date();
+          await dbUser.save();
         }
         user.id = String(dbUser._id);
       }

@@ -31,6 +31,7 @@ export function MatchPredictor({
   initialDirection,
   initialHome,
   initialAway,
+  disabled,
 }: {
   matchId: string;
   kickoffAt: string;
@@ -39,6 +40,9 @@ export function MatchPredictor({
   initialDirection: Direction | null;
   initialHome: number | null;
   initialAway: number | null;
+  // true = cuenta sin confirmar (ver VerifyEmailNudge) — "existe la cuenta" ≠ "participa",
+  // no se puede pronosticar hasta confirmar el email.
+  disabled?: boolean;
 }) {
   const hadScore = initialHome != null && initialAway != null;
 
@@ -73,6 +77,10 @@ export function MatchPredictor({
 
   if (locked) {
     return <p className="text-xs font-bold text-[#8A8FB2]">Carga cerrada — cierra 1 h antes del partido.</p>;
+  }
+
+  if (disabled) {
+    return <p className="text-xs font-bold text-[#8A8FB2]">Confirmá tu email para cargar este pronóstico.</p>;
   }
 
   function cancelSave() {

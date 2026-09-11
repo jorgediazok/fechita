@@ -13,10 +13,15 @@ import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/fixt
 import { isPredictionLocked } from "@/lib/time";
 import { markBadgesSeen } from "@/lib/badges";
 import { markStreakSeen } from "@/lib/profile";
+import { isEmailVerified, sendVerificationEmail } from "@/lib/emailVerification";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function submitDirection(matchId: string, direction: string) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  // Defensa en profundidad: la UI ya deshabilita el pronosticador para cuentas sin confirmar
+  // (ver VerifyEmailNudge / MatchPredictor `disabled`), esto es el candado del server.
+  if (!isEmailVerified(user)) throw new Error("Confirmá tu email para poder pronosticar");
 
   if (!PREDICTION_DIRECTIONS.includes(direction as (typeof PREDICTION_DIRECTIONS)[number])) {
     throw new Error("Dirección de pronóstico inválida");
@@ -43,6 +48,7 @@ export async function submitDirection(matchId: string, direction: string) {
 export async function submitExactScore(matchId: string, homeScore: number, awayScore: number) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!isEmailVerified(user)) throw new Error("Confirmá tu email para poder pronosticar");
 
   if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
     throw new Error("Los goles tienen que ser números enteros positivos");
@@ -114,6 +120,28 @@ export async function dismissStreak() {
   if (!user) redirect("/login");
   await markStreakSeen(user._id);
   redirect("/pronosticos");
+}
+
+export type ResendVerificationState = { sent?: boolean; error?: string };
+
+// Botón "reenviar" de VerifyEmailNudge (useActionState le pasa prevState y formData, ninguno
+// hace falta acá). Rate-limit por usuario (no por IP — el resend es sobre una cuenta puntual,
+// no importa desde qué red se pida).
+export async function resendVerificationAction(): Promise<ResendVerificationState> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (isEmailVerified(user)) return { sent: true };
+
+  const { allowed } = await checkRateLimit(`resend-verify:${String(user._id)}`, {
+    max: 3,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!allowed) {
+    return { error: "Ya lo reenviamos hace poco — revisá spam o esperá unos minutos." };
+  }
+
+  await sendVerificationEmail(user._id);
+  return { sent: true };
 }
 
 export async function finishMockMatch(formData: FormData) {
