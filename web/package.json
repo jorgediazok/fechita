@@ -11,7 +11,10 @@
     "test:watch": "vitest",
     "seed": "node --env-file=.env.local --import tsx scripts/seed-leagues.ts",
     "seed:clean": "node --env-file=.env.local --import tsx scripts/seed-leagues.ts --clean-only",
-    "seed:bots": "node --env-file=.env.local --import tsx scripts/seed-bots.ts"
+    "seed:bots": "node --env-file=.env.local --import tsx scripts/seed-bots.ts",
+    "seed:e2e": "node --env-file=.env.local --import tsx scripts/seed-e2e.ts",
+    "test:e2e": "npm run seed:e2e && playwright test",
+    "test:e2e:ui": "npm run seed:e2e && playwright test --ui"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -24,6 +27,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24.13.4",

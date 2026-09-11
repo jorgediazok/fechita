@@ -431,7 +431,13 @@ export default async function PronosticosPage({
 
               if (finished) {
                 return (
-                  <div key={String(match._id)} className="relative flex items-center gap-2.5 rounded-2xl bg-[#15162A] p-3.5">
+                  <div
+                    key={String(match._id)}
+                    data-testid="match-card"
+                    data-match-status="finished"
+                    data-match-id={String(match._id)}
+                    className="relative flex items-center gap-2.5 rounded-2xl bg-[#15162A] p-3.5"
+                  >
                     <TeamBadge team={match.homeTeamId} size={30} />
                     <div className="flex-1 text-xs font-extrabold text-[#B9BCDA]">
                       {match.homeTeamId.shortName} vs. {match.awayTeamId.shortName}
@@ -467,6 +473,9 @@ export default async function PronosticosPage({
               return (
                 <div
                   key={String(match._id)}
+                  data-testid="match-card"
+                  data-match-status="pending"
+                  data-match-id={String(match._id)}
                   className={`relative flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-3.5 ${
                     prediction?.predictedDirection ? "ring-1 ring-[#4FD17F]/25" : ""
                   }`}
