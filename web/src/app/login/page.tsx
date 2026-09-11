@@ -3,6 +3,8 @@ import Link from "next/link";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { loginWithGoogle } from "./actions";
 import { LoginForm } from "./LoginForm";
+import { SITE_NAME } from "@/lib/site";
+import { BrandMark } from "@/components/BrandMark";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -23,12 +25,10 @@ export default function LoginPage() {
         >
           <div className="flex flex-col items-center gap-3">
             <div className="flex h-[70px] w-[70px] items-center justify-center rounded-full border-4 border-white bg-[#0B0C16] shadow-[0_10px_28px_rgba(0,0,0,0.4)]">
-              <svg width="34" height="34" viewBox="0 -960 960 960" fill="#FFFFFF">
-                <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm200-500 54-18 16-54q-32-48-77-82.5T574-786l-54 38v56l160 112Zm-400 0 160-112v-56l-54-38q-54 17-99 51.5T210-652l16 54 54 18Zm-42 308 46-4 30-54-58-174-56-20-40 30q0 65 18 118.5T238-272Zm293 108q25-4 49-12l28-60-26-44H378l-26 44 28 60q24 8 49 12t51 4q26 0 51-4ZM390-360h180l56-160-146-102-144 102 54 160Zm332 88q42-50 60-103.5T800-494l-40-28-56 18-58 174 30 54 46 4Z" />
-              </svg>
+              <BrandMark size={46} variant="mark" />
             </div>
             <h1 className="font-display text-[32px] leading-none text-white">
-              CÓMO VAN
+              {SITE_NAME.toUpperCase()}
             </h1>
             <p className="text-center text-[15px] font-bold text-white/70">
               Pronosticá. Sumá puntos. Bancá a tu club.
