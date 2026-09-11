@@ -6,6 +6,8 @@ import { getUserGroups } from "@/lib/groups";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { BottomNav } from "@/components/BottomNav";
 import { createGroupAction, joinGroupAction } from "./actions";
+import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
+import { isEmailVerified } from "@/lib/emailVerification";
 
 export const metadata: Metadata = {
   title: "Tus grupos",
@@ -17,6 +19,7 @@ export default async function GruposPage() {
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
 
+  const verified = isEmailVerified(user);
   const myGroups = await getUserGroups(user._id);
 
   return (
@@ -35,6 +38,8 @@ export default async function GruposPage() {
             Compartí un código con amigos y compitan aparte
           </p>
         </div>
+
+        {!verified && <VerifyEmailNudge email={user.email} />}
 
         <div className="flex flex-col gap-2.5 px-4.5 pt-5">
           {myGroups.length === 0 && (
@@ -62,55 +67,63 @@ export default async function GruposPage() {
           ))}
         </div>
 
-        <div className="mx-4.5 mt-5 flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-4">
-          <h2 className="font-display text-xs tracking-wide text-[#8A8FB2]">CREAR GRUPO</h2>
-          <form action={createGroupAction} className="flex items-center gap-2">
-            <label htmlFor="group-name" className="sr-only">
-              Nombre del grupo
-            </label>
-            <input
-              id="group-name"
-              type="text"
-              name="name"
-              placeholder="Nombre del grupo"
-              required
-              autoComplete="off"
-              className="h-10 flex-1 rounded-xl bg-[#0B0C16] px-3 text-[13px] font-bold text-[#E4E6F7] shadow-[inset_0_0_0_1.5px_#262844] placeholder:text-[#8A8FB2]"
-            />
-            <button
-              type="submit"
-              className="h-10 rounded-xl bg-gradient-to-br from-[#6845E0] to-[#9B5CFF] px-4 font-display text-[11px] text-white shadow-[0_6px_16px_rgba(124,92,255,0.4)]"
-            >
-              CREAR
-            </button>
-          </form>
-        </div>
+        {verified ? (
+          <>
+            <div className="mx-4.5 mt-5 flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-4">
+              <h2 className="font-display text-xs tracking-wide text-[#8A8FB2]">CREAR GRUPO</h2>
+              <form action={createGroupAction} className="flex items-center gap-2">
+                <label htmlFor="group-name" className="sr-only">
+                  Nombre del grupo
+                </label>
+                <input
+                  id="group-name"
+                  type="text"
+                  name="name"
+                  placeholder="Nombre del grupo"
+                  required
+                  autoComplete="off"
+                  className="h-10 flex-1 rounded-xl bg-[#0B0C16] px-3 text-[13px] font-bold text-[#E4E6F7] shadow-[inset_0_0_0_1.5px_#262844] placeholder:text-[#8A8FB2]"
+                />
+                <button
+                  type="submit"
+                  className="h-10 rounded-xl bg-gradient-to-br from-[#6845E0] to-[#9B5CFF] px-4 font-display text-[11px] text-white shadow-[0_6px_16px_rgba(124,92,255,0.4)]"
+                >
+                  CREAR
+                </button>
+              </form>
+            </div>
 
-        <div className="mx-4.5 mt-3 flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-4">
-          <h2 className="font-display text-xs tracking-wide text-[#8A8FB2]">UNIRME CON CÓDIGO</h2>
-          <form action={joinGroupAction} className="flex items-center gap-2">
-            <label htmlFor="group-code" className="sr-only">
-              Código de invitación
-            </label>
-            <input
-              id="group-code"
-              type="text"
-              name="code"
-              placeholder="Ej. 8F3K2Q"
-              required
-              maxLength={6}
-              autoCapitalize="characters"
-              autoComplete="off"
-              className="h-10 flex-1 rounded-xl bg-[#0B0C16] px-3 text-[13px] font-bold uppercase tracking-widest text-[#E4E6F7] shadow-[inset_0_0_0_1.5px_#262844] placeholder:text-[#8A8FB2] placeholder:normal-case placeholder:tracking-normal"
-            />
-            <button
-              type="submit"
-              className="h-10 rounded-xl bg-[#1F2038] px-4 font-display text-[11px] text-[#9195C2]"
-            >
-              UNIRME
-            </button>
-          </form>
-        </div>
+            <div className="mx-4.5 mt-3 flex flex-col gap-2.5 rounded-2xl bg-[#15162A] p-4">
+              <h2 className="font-display text-xs tracking-wide text-[#8A8FB2]">UNIRME CON CÓDIGO</h2>
+              <form action={joinGroupAction} className="flex items-center gap-2">
+                <label htmlFor="group-code" className="sr-only">
+                  Código de invitación
+                </label>
+                <input
+                  id="group-code"
+                  type="text"
+                  name="code"
+                  placeholder="Ej. 8F3K2Q"
+                  required
+                  maxLength={6}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  className="h-10 flex-1 rounded-xl bg-[#0B0C16] px-3 text-[13px] font-bold uppercase tracking-widest text-[#E4E6F7] shadow-[inset_0_0_0_1.5px_#262844] placeholder:text-[#8A8FB2] placeholder:normal-case placeholder:tracking-normal"
+                />
+                <button
+                  type="submit"
+                  className="h-10 rounded-xl bg-[#1F2038] px-4 font-display text-[11px] text-[#9195C2]"
+                >
+                  UNIRME
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <p className="mx-4.5 mt-5 rounded-2xl bg-[#15162A] p-4 text-xs font-bold text-[#8A8FB2]">
+            Confirmá tu email para crear un grupo o unirte con un código.
+          </p>
+        )}
     </PhoneFrame>
   );
 }

@@ -7,6 +7,7 @@ import { signIn } from "@/auth";
 import { connectToDatabase } from "@/lib/db";
 import UserModel from "@/models/User";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { sendVerificationEmail } from "@/lib/emailVerification";
 
 export type SignupState = { error?: string };
 
@@ -53,7 +54,11 @@ export async function signupAction(
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await UserModel.create({ name, email, passwordHash, favoriteTeamId: clubId });
+  const user = await UserModel.create({ name, email, passwordHash, favoriteTeamId: clubId });
+
+  // No bloquea el alta si el mail tarda o Resend no está configurado (sendEmail es no-op sin
+  // RESEND_API_KEY) — la cuenta ya existe, confirmar el mail es para "participar", no para entrar.
+  await sendVerificationEmail(user._id);
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/pronosticos" });

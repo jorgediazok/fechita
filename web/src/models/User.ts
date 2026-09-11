@@ -9,6 +9,11 @@ const UserSchema = new Schema({
   // Solo la tienen los usuarios registrados con email/password (Credentials).
   // Los que entran por Google no tienen este campo.
   passwordHash: { type: String },
+  // Fecha en que se confirmó el email (null = sin confirmar). Los usuarios de Google lo traen
+  // seteado desde el alta (Google ya verificó el mail); los de Credentials lo confirman con el
+  // link que manda sendVerificationEmail (src/lib/emailVerification.ts). No bloquea el login —
+  // solo "participar" (cargar pronósticos, crear/unirse a un grupo) lo exige.
+  emailVerified: { type: Date, default: null },
   // Categoría de la liga (capa 3). Persiste entre fechas aunque las
   // ligas en sí se resetean — ver docs/product-design.md.
   currentTier: { type: String, enum: TIER_ORDER, default: "D" },

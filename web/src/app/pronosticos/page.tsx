@@ -20,6 +20,8 @@ import {
 import { MatchPredictor } from "./MatchPredictor";
 import { RoundProgress } from "./RoundProgress";
 import { PushNudge } from "@/components/PushClient";
+import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
+import { isEmailVerified } from "@/lib/emailVerification";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
@@ -88,6 +90,7 @@ export default async function PronosticosPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
+  const verified = isEmailVerified(user);
 
   // Preview dev (mock): forzar el festejo de racha desde la URL para poder verlo sin cerrar
   // una fecha. Ej: /pronosticos?festejoRacha=4
@@ -294,6 +297,8 @@ export default async function PronosticosPage({
         </div>
       </div>
 
+      {!verified && <VerifyEmailNudge email={user.email} />}
+
       {/* racha en juego: nudge para volver y no cortarla */}
       {streakAtRisk && (
         <div className="mx-4.5 mt-3 flex items-center gap-2.5 rounded-2xl border border-[#FF7A3D]/40 bg-[#211308] px-3.5 py-3">
@@ -481,6 +486,7 @@ export default async function PronosticosPage({
                     initialDirection={prediction?.predictedDirection ?? null}
                     initialHome={prediction?.predictedHomeScore ?? null}
                     initialAway={prediction?.predictedAwayScore ?? null}
+                    disabled={!verified}
                   />
 
                   {isMockMode && !finished && (
