@@ -5,7 +5,7 @@
 
 export type BadgeRarity = "bronce" | "plata" | "oro" | "marca";
 
-export type BadgeGroup = "aciertos" | "rachas" | "exactos" | "ascensos" | "hitos" | "meta";
+export type BadgeGroup = "aciertos" | "rachas" | "exactos" | "trivia" | "ascensos" | "hitos" | "meta";
 
 export type BadgeDef = {
   id: string;
@@ -51,6 +51,7 @@ export const GROUP_LABELS: Record<BadgeGroup, string> = {
   aciertos: "Aciertos acumulados",
   rachas: "Rachas",
   exactos: "Resultados exactos",
+  trivia: "Trivia diaria",
   ascensos: "Ascensos",
   hitos: "Hitos",
   meta: "La última",
@@ -133,6 +134,20 @@ const crown =
   '<circle cx="12" cy="4.4" r="1.7" fill="currentColor"/>' +
   '<rect x="5.2" y="19.8" width="13.6" height="2.4" rx="1.2" fill="currentColor"/>';
 
+const questionMark =
+  '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+  '<text x="12" y="16.4" text-anchor="middle" font-size="13" font-weight="800" fill="currentColor" font-family="Manrope, sans-serif">?</text>';
+
+const questionMarkSpark =
+  '<circle cx="10.4" cy="13.2" r="7.6" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+  '<text x="10.4" y="16.9" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor" font-family="Manrope, sans-serif">?</text>' +
+  '<path d="M18.5 3l0.9 2.3 2.3 0.9-2.3 0.9L18.5 9.4l-0.9-2.3L15.3 6.2l2.3-0.9z" fill="currentColor"/>';
+
+const openBook =
+  '<path d="M3 5.6c2.4-1.1 5-1.4 7.4 0v13c-2.4-1.4-5-1.1-7.4 0z" fill="currentColor" opacity="0.8"/>' +
+  '<path d="M21 5.6c-2.4-1.1-5-1.4-7.4 0v13c2.4-1.4 5-1.1 7.4 0z" fill="currentColor"/>' +
+  '<path d="M12 5.4v13.2" stroke="#12101f" stroke-width="1" stroke-opacity="0.45"/>';
+
 // ── catálogo ─────────────────────────────────────────────────────────────────
 export const BADGES: BadgeDef[] = [
   // aciertos acumulados
@@ -170,6 +185,17 @@ export const BADGES: BadgeDef[] = [
   { id: "brujo", group: "exactos", name: "Brujo", rarity: "marca", motif: targetPerfect,
     flavor: "Veinticinco al hueso. ¿Vos en qué laburás?",
     criterio: "Clavar 25 resultados exactos" },
+
+  // trivia diaria — aciertos de por vida, sin relación con el tope que suma a la liga
+  { id: "curioso", group: "trivia", name: "Preguntón", rarity: "bronce", motif: questionMark,
+    flavor: "Diez aciertos en la trivia diaria. Le vas agarrando la mano.",
+    criterio: "10 aciertos en la trivia diaria" },
+  { id: "erudito", group: "trivia", name: "Sabelotodo", rarity: "plata", motif: questionMarkSpark,
+    flavor: "Treinta aciertos. Ya sabés más folclore futbolero que la mayoría.",
+    criterio: "30 aciertos en la trivia diaria" },
+  { id: "enciclopedia", group: "trivia", name: "Enciclopedia", rarity: "oro", motif: openBook,
+    flavor: "Sesenta aciertos. A este paso deberías dar clases.",
+    criterio: "60 aciertos en la trivia diaria" },
 
   // ascensos
   { id: "sub-c", group: "ascensos", name: "Bienvenido a la C", rarity: "plata", motif: up("C"),
@@ -216,7 +242,7 @@ export function getBadge(id: string): BadgeDef | undefined {
 }
 
 export const BADGE_GROUPS: { group: BadgeGroup; label: string; badges: BadgeDef[] }[] = (
-  ["aciertos", "rachas", "exactos", "ascensos", "hitos", "meta"] as const
+  ["aciertos", "rachas", "exactos", "trivia", "ascensos", "hitos", "meta"] as const
 ).map((group) => ({
   group,
   label: GROUP_LABELS[group],

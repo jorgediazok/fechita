@@ -84,6 +84,19 @@ const RULES: Rule[] = [
       </>
     ),
   },
+  {
+    n: "07",
+    title: "Trivia diaria",
+    body: (
+      <>
+        Una pregunta nueva de cultura futbolera por día. Cada acierto suma{" "}
+        <b>1 punto a tu fecha en curso</b>, con un tope de <b>5 puntos extra por fecha</b>
+        {" "}(para que el ascenso siga siendo sobre todo de acertar partidos, no de trivia). Los
+        aciertos de más ya no suman a la liga, pero siguen contando para tus{" "}
+        <b>insignias de trivia</b>, sin límite.
+      </>
+    ),
+  },
 ];
 
 export default async function ReglasPage() {

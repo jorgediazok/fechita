@@ -15,6 +15,8 @@ import { markBadgesSeen } from "@/lib/badges";
 import { markStreakSeen } from "@/lib/profile";
 import { isEmailVerified, canParticipate, sendVerificationEmail } from "@/lib/emailVerification";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { answerTrivia, type AnswerTriviaResult } from "@/lib/trivia";
+import { evaluateBadgesForUser } from "@/lib/badges/award";
 
 export async function submitDirection(matchId: string, direction: string) {
   const user = await getCurrentUser();
@@ -174,4 +176,23 @@ export async function resetMockMatch(formData: FormData) {
   await runBots();
 
   revalidatePath("/pronosticos");
+}
+
+export async function answerTriviaAction(
+  questionId: string,
+  chosenIndex: number
+): Promise<AnswerTriviaResult> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  // Mismo candado que cargar pronósticos: la trivia suma puntos a la liga, así que cae bajo
+  // "participar" — no solo "existir la cuenta" (ver lib/emailVerification.ts).
+  if (!canParticipate(user)) throw new Error("Confirmá tu email para poder participar de la trivia");
+
+  const result = await answerTrivia(user._id, questionId, chosenIndex);
+  if (result.ok) {
+    // Puede desbloquear una insignia de trivia (curioso/erudito/enciclopedia) al toque.
+    await evaluateBadgesForUser(user._id);
+    revalidatePath("/pronosticos");
+  }
+  return result;
 }

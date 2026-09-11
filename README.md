@@ -5,14 +5,16 @@ portfolio con potencial de uso real: identidad local + diseño cuidado + el eje 
 competencia social (ligas con ascenso/descenso, grupos de amigos), no solo en acertar resultados.
 
 **Estado:** el loop central anda de punta a punta y las capas sociales (ligas por fecha, grupos
-privados, bots, insignias, racha, notificaciones) están sobre un modelo real y auth real. Los
+privados, bots, insignias, racha, trivia diaria, notificaciones) están sobre un modelo real y
+auth real — no queda ninguna capa aditiva del alcance original sin construir. Los
 partidos salen de **The Odds API** (free tier, temporada argentina en curso). El registro tiene
 un primer nivel de hardening (rate limit + honeypot + verificación de email armada pero
 **desactivada** hasta tener un dominio propio verificado en Resend — ver "Seguridad del
 registro" más abajo); el consentimiento de Google OAuth ya está **publicado** (no requirió
 revisión de Google, los scopes son básicos), así que cualquiera puede entrar por Google, no
-solo test users. Falta: trivia diaria y, si hace falta más que rate limit + honeypot antes de
-difundir la app más ampliamente, Cloudflare Turnstile. El logo ya tiene una primera versión
+solo test users. Lo que sigue es hardening (Cloudflare Turnstile como siguiente escalón si hace
+falta más que rate limit + honeypot, antes de difundir la app más ampliamente) y profundizar lo
+que ya anda. El logo ya tiene una primera versión
 de símbolo —un banderín de córner sobre un cuadrado con degradé (`BrandMark.tsx`)— usado en
 favicon/PWA/login/landing; meter ese banderín como la "i" dentro de la palabra "fechita" sigue
 pendiente de trabajo tipográfico fino.
@@ -71,6 +73,8 @@ fechita/
     │   │   ├── groups.ts          # grupos privados
     │   │   ├── bots/              # 50 usuarios bot que pronostican solos
     │   │   ├── badges/            # catálogo de insignias + cálculo de racha (currentRoundStreak)
+    │   │   ├── trivia/            # banco de preguntas + pregunta del día + respuestas
+    │   │   ├── hash.ts            # cyrb53, compartido por bots (RNG) y trivia (pregunta del día)
     │   │   ├── profile.ts         # stats de carrera + historial de fechas para /perfil
     │   │   ├── push/              # web push: claves VAPID, envío, dedupe, mensajes
     │   │   ├── notifications.ts   # feed in-app (la campanita) sobre NotificationLog
@@ -274,10 +278,11 @@ evita mandarlo más de una vez por usuario aunque varias corridas caigan adentro
 
 ### Insignias, racha y perfil (`lib/badges/`, `lib/profile.ts`)
 
-- **Insignias**: 18 insignias en código (`lib/badges/catalog.ts`, sin colección de catálogo en
-  DB — el mismo criterio que `tiers.ts`), en 6 familias: aciertos acumulados, rachas, resultados
-  exactos, ascensos de categoría, hitos (ganador de la fecha, superclásico, sorpresa) y una meta
-  ("Las tenés todas") por completar las otras 17. Cada usuario ganado se guarda en `UserBadge`.
+- **Insignias**: 21 insignias en código (`lib/badges/catalog.ts`, sin colección de catálogo en
+  DB — el mismo criterio que `tiers.ts`), en 7 familias: aciertos acumulados, rachas, resultados
+  exactos, trivia diaria (ver abajo), ascensos de categoría, hitos (ganador de la fecha,
+  superclásico, sorpresa) y una meta ("Las tenés todas") por completar las otras 20. Cada
+  insignia ganada se guarda en `UserBadge`.
   Se evalúan (`evaluateBadgesForUser`, `lib/badges/award.ts`) al sincronizar, al cerrar una fecha y
   al abrir `/pronosticos`; los bots quedan afuera. La grilla vive en `/perfil/insignias`
   (`BadgeShowcase`, con el criterio de cada una); ganar una dispara un festejo
@@ -292,6 +297,33 @@ evita mandarlo más de una vez por usuario aunque varias corridas caigan adentro
   fecha — todo calculado en `lib/profile.ts`. `/reglas` (pública) explica las mecánicas del juego;
   `/legal` tiene una primera versión de términos/privacidad (honesta sobre el estado actual,
   sin pretender ser un texto con revisión legal todavía).
+
+### Trivia diaria (`lib/trivia/`)
+
+El gancho para los días sin partido. **1 pregunta múltiple choice por día**, banco de 61
+preguntas curadas a mano y en código (`trivia/catalog.ts`, mismo criterio que el catálogo de
+insignias — sin IA en vivo, sin colección en DB), fútbol argentino con datos históricos
+estables a propósito (Mundiales, clubes, Libertadores/Sudamericana, jugadores), para no
+arriesgar un dato "vigente" que quede desactualizado.
+
+La pregunta del día es **determinística**: hash de `YYYY-MM-DD` en huso **argentino** (no UTC,
+cambia a la medianoche de Buenos Aires) módulo el largo del banco (`trivia/today.ts`) — todos
+los usuarios ven la misma pregunta el mismo día, sin tabla de "pregunta de hoy" que mantener.
+El hash (`cyrb53`, `lib/hash.ts`) es compartido con el RNG determinístico de los bots.
+
+`TriviaAnswer` (un doc por usuario y día, índice único) guarda la respuesta; el servidor nunca
+manda el índice correcto hasta que el usuario contesta. Card en `/pronosticos`
+(`TriviaCard`, debajo del nudge de push).
+
+**Puntaje, en dos tracks separados:**
+- Hasta **5 aciertos por fecha** suman al standing en vivo de la liga — el bonus se calcula
+  dentro de `lib/leagues.ts` (misma ventana de fechas que usa `closesAt`), topeado para que el
+  ascenso siga reflejando sobre todo saber predecir fútbol real, no trivia.
+- **Todos** los aciertos, sin tope, alimentan 3 insignias nuevas (`curioso` 10, `erudito` 30,
+  `enciclopedia` 60 aciertos de por vida).
+
+Cae bajo el mismo candado que cargar pronósticos (`canParticipate()` — ver "Seguridad del
+registro" abajo): suma puntos a la liga, así que es "participar", no solo "existir la cuenta".
 
 ### Seguridad del registro (`lib/rateLimit.ts`, `lib/emailVerification.ts`)
 
@@ -351,6 +383,7 @@ usan `PhoneFrame` (columna angosta) a propósito — es un producto mobile. Acce
 | `LeagueMembership` | usuario en un grupo (`points` snapshot, `result`, `wonRound`) |
 | `Group` / `GroupMembership` | grupos privados de amigos |
 | `UserBadge` | insignia ganada por un usuario (`badgeId`, fecha) — el catálogo vive en código, no en DB |
+| `TriviaAnswer` | respuesta de trivia de un usuario en un día (`dayKey` único por usuario) — el banco de preguntas vive en código, no en DB |
 | `PushSubscription` | una suscripción web push por dispositivo (`endpoint` único) |
 | `NotificationLog` | anti-duplicados de notificaciones + feed in-app (`title`/`body`/`url`/`readAt`; `userId+kind+dedupeKey` único, TTL 60d) |
 | `EmailVerificationToken` | token de confirmación de email (TTL 24h) |
@@ -393,7 +426,8 @@ datos no requiere re-mapear.
 | `lib/fixtures/theoddsapiProvider.test.ts` | `assignRounds`: numerar fechas agrupando por huecos > 2.5 días desde el ancla real de la primera fecha |
 | `lib/emailVerification.test.ts` | `canParticipate`: la política (`REQUIRE_EMAIL_VERIFICATION`) manda sobre el estado real del usuario; default apagado |
 | `lib/profile.test.ts` | `bestTierOf`: el techo histórico no baja al descender, y no se rompe sin `bestTier` persistido |
-| `lib/badges/catalog.test.ts` | El catálogo de 18 insignias: ids únicos, cada una con rareza/grupo válidos, `BADGE_GROUPS` las reparte todas sin repetir, `coleccionista` es la única de la meta |
+| `lib/badges/catalog.test.ts` | El catálogo de 21 insignias: ids únicos, cada una con rareza/grupo válidos, `BADGE_GROUPS` las reparte todas sin repetir, `coleccionista` es la única de la meta |
+| `lib/trivia/today.test.ts` | `triviaDayKey`: huso argentino, no UTC; `questionForDay`: determinística por día, cubre el catálogo |
 
 Para testear la matemática de zonas aislada se separó a `lib/leagueZones.ts` (mismo criterio
 que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
@@ -406,7 +440,9 @@ no toca ninguna base real. Fixtures en `test/factories.ts`.
 | Archivo | Qué verifica |
 |---|---|
 | `lib/leagues.integration.test.ts` | `closeExpiredGroups`: ascenso del top ~25% y descenso del bottom ~25%, `wonRound` solo del #1, sin ascenso desde PRIMERA ni descenso desde D, reinscripción en la fecha siguiente con el tier actualizado, orden de `getGroupStanding` |
+| `lib/leagues.trivia.integration.test.ts` | El bonus de trivia en el standing en vivo: suma aciertos dentro de la ventana de la fecha con tope de 5, ignora los de fuera de la ventana |
 | `lib/badges/streak.integration.test.ts` | `currentRoundStreak`: la regla de ≥3 pronósticos y +50% de aciertos por fecha, el corte en la primera fecha que falla, "la mitad justa no alcanza" |
+| `lib/trivia/trivia.integration.test.ts` | `answerTrivia`: registra y puntúa, no deja responder dos veces el mismo día, rechaza pregunta vieja/opción inválida; `getTriviaState` no revela la respuesta antes de contestar; `totalTriviaHits` cuenta solo aciertos, sin tope |
 
 Pendiente: E2E del loop central (Playwright), y más integración de `evaluateBadgesForUser`.
 

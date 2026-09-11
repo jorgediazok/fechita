@@ -21,6 +21,8 @@ import { MatchPredictor } from "./MatchPredictor";
 import { RoundProgress } from "./RoundProgress";
 import { PushNudge } from "@/components/PushClient";
 import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
+import { TriviaCard } from "@/components/TriviaCard";
+import { getTriviaState } from "@/lib/trivia";
 import { canParticipate } from "@/lib/emailVerification";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
@@ -102,7 +104,7 @@ export default async function PronosticosPage({
 
   // Todo lo de abajo es independiente entre sí — se pedía en serie (~35 round-trips a Atlas,
   // ~3 s). En paralelo, la ruta crítica pasa a ser la cadena de liga (membresía → tabla).
-  const [matches, predictions, leagueData, unseenBadges, streak] = await Promise.all([
+  const [matches, predictions, leagueData, unseenBadges, streak, triviaState] = await Promise.all([
     MatchModel.find({})
       .sort({ kickoffAt: 1 })
       .populate("homeTeamId", "name shortName logoUrl")
@@ -137,6 +139,9 @@ export default async function PronosticosPage({
 
     // Racha de fechas (misma que las insignias de fuego).
     currentRoundStreak(user._id),
+
+    // Trivia del día — solo si puede participar (ver VerifyEmailNudge más abajo).
+    verified ? getTriviaState(user._id) : Promise.resolve(null),
   ]);
 
   const { group, ranked, members: memberUsers } = leagueData;
@@ -315,6 +320,8 @@ export default async function PronosticosPage({
       )}
 
       <PushNudge />
+
+      {triviaState && <TriviaCard initial={triviaState} />}
 
       {/* tu lugar en la tabla — sin sentido si nadie sumó todavía */}
       {totalPoints > 0 && nearby.length > 1 && (
