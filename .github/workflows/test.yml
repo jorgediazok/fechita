@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Los globals `PageProps<Route>`/`LayoutProps<Route>` (Next 16, ver AGENTS.md) los
+      # genera Next al arrancar `next dev`/`next build` en `.next/**/types` — un checkout
+      # limpio en CI no los tiene, `tsc` solo los ve si corremos esto antes.
+      - name: Generar tipos de rutas de Next
+        run: npx next typegen
+
       - name: Typecheck
         run: npx tsc --noEmit
 
