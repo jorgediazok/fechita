@@ -7,7 +7,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { BottomNav } from "@/components/BottomNav";
 import { createGroupAction, joinGroupAction } from "./actions";
 import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
-import { isEmailVerified } from "@/lib/emailVerification";
+import { canParticipate } from "@/lib/emailVerification";
 
 export const metadata: Metadata = {
   title: "Tus grupos",
@@ -19,7 +19,7 @@ export default async function GruposPage() {
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
 
-  const verified = isEmailVerified(user);
+  const verified = canParticipate(user);
   const myGroups = await getUserGroups(user._id);
 
   return (

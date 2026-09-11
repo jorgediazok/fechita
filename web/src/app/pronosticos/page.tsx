@@ -21,7 +21,7 @@ import { MatchPredictor } from "./MatchPredictor";
 import { RoundProgress } from "./RoundProgress";
 import { PushNudge } from "@/components/PushClient";
 import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
-import { isEmailVerified } from "@/lib/emailVerification";
+import { canParticipate } from "@/lib/emailVerification";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
@@ -90,7 +90,7 @@ export default async function PronosticosPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!user.favoriteTeamId) redirect("/onboarding");
-  const verified = isEmailVerified(user);
+  const verified = canParticipate(user);
 
   // Preview dev (mock): forzar el festejo de racha desde la URL para poder verlo sin cerrar
   // una fecha. Ej: /pronosticos?festejoRacha=4

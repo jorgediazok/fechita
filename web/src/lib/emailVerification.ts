@@ -13,6 +13,22 @@ export function isEmailVerified(user: { emailVerified?: Date | null }): boolean 
   return Boolean(user.emailVerified);
 }
 
+// Interruptor de política, aparte del hecho de si el mail está confirmado o no. Hoy en false
+// a propósito: sin dominio propio verificado en Resend, el remitente de prueba
+// (onboarding@resend.dev) solo puede mandarle mail al dueño de la cuenta de Resend — a nadie
+// más — así que exigir la confirmación dejaría a cualquier amigo trabado para siempre sin
+// poder participar. El resto de la costura (token, envío, /verificar-email, banners, guards)
+// ya está lista: el día que haya un dominio propio verificado, esto pasa a "true" y no hace
+// falta tocar nada más.
+export function isVerificationRequired(): boolean {
+  return process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+}
+
+// Lo que efectivamente gatea "participar" en las pantallas y en los guards del server.
+export function canParticipate(user: { emailVerified?: Date | null }): boolean {
+  return !isVerificationRequired() || isEmailVerified(user);
+}
+
 export async function sendVerificationEmail(userId: Types.ObjectId | string): Promise<void> {
   await connectToDatabase();
   const user = await UserModel.findById(userId);

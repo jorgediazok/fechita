@@ -13,7 +13,7 @@ import { setMockResult, resetMockFixture, postponeMockFixture } from "@/lib/fixt
 import { isPredictionLocked } from "@/lib/time";
 import { markBadgesSeen } from "@/lib/badges";
 import { markStreakSeen } from "@/lib/profile";
-import { isEmailVerified, sendVerificationEmail } from "@/lib/emailVerification";
+import { isEmailVerified, canParticipate, sendVerificationEmail } from "@/lib/emailVerification";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function submitDirection(matchId: string, direction: string) {
@@ -21,7 +21,7 @@ export async function submitDirection(matchId: string, direction: string) {
   if (!user) redirect("/login");
   // Defensa en profundidad: la UI ya deshabilita el pronosticador para cuentas sin confirmar
   // (ver VerifyEmailNudge / MatchPredictor `disabled`), esto es el candado del server.
-  if (!isEmailVerified(user)) throw new Error("Confirmá tu email para poder pronosticar");
+  if (!canParticipate(user)) throw new Error("Confirmá tu email para poder pronosticar");
 
   if (!PREDICTION_DIRECTIONS.includes(direction as (typeof PREDICTION_DIRECTIONS)[number])) {
     throw new Error("Dirección de pronóstico inválida");
@@ -48,7 +48,7 @@ export async function submitDirection(matchId: string, direction: string) {
 export async function submitExactScore(matchId: string, homeScore: number, awayScore: number) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (!isEmailVerified(user)) throw new Error("Confirmá tu email para poder pronosticar");
+  if (!canParticipate(user)) throw new Error("Confirmá tu email para poder pronosticar");
 
   if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
     throw new Error("Los goles tienen que ser números enteros positivos");
