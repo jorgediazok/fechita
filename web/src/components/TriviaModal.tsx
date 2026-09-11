@@ -6,15 +6,28 @@ import { answerTriviaAction } from "@/app/pronosticos/actions";
 import type { TriviaState } from "@/lib/trivia";
 
 // Ícono de trivia en el hero de /pronosticos (al lado de la campanita) + el modal en sí,
-// autocontenido igual que StreakInfo.tsx (ancla arriba-centro, no full-screen — no le pisa
-// protagonismo a los partidos). Dos formas de abrirlo: automática al entrar a la pantalla
-// (`autoOpen`, solo si no hay nada de más prioridad en cola — ver pronosticos/page.tsx) o
-// tocando el ícono, que queda visible mientras no la respondiste hoy.
+// autocontenido igual que StreakInfo.tsx (ancla centrada vía createPortal, no full-screen —
+// no le pisa protagonismo a los partidos). Dos formas de abrirlo: automática al entrar a la
+// pantalla (`autoOpen`, solo si no hay nada de más prioridad en cola — ver
+// pronosticos/page.tsx) o tocando el ícono, que queda visible mientras no la respondiste hoy.
 export function TriviaModal({ initial, autoOpen }: { initial: TriviaState; autoOpen: boolean }) {
   const [state, setState] = useState(initial);
   const [open, setOpen] = useState(autoOpen);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // El portal de StreakInfo.tsx (mismo patrón) solo se abre por un click, ya bien después de
+  // hidratada la página — acá `open` puede arrancar en `true` desde el primer render
+  // (autoOpen). Un createPortal que nace abierto en el MISMO render que hidrata no inserta
+  // nada en el DOM (visto empíricamente: sin errores en consola, `open` confirmado `true`,
+  // el contenedor existe, pero createPortal no llega a montar nada) — hay que esperar a que
+  // pase un ciclo de render después de hidratar. Es el patrón estándar para portales que
+  // arrancan abiertos en frameworks con SSR (Radix, Headless UI, etc.).
+  const [mountedOnClient, setMountedOnClient] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMountedOnClient(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -67,9 +80,10 @@ export function TriviaModal({ initial, autoOpen }: { initial: TriviaState; autoO
       )}
 
       {open &&
+        mountedOnClient &&
         createPortal(
           <div
-            className="absolute inset-0 z-[60] flex items-start justify-center bg-black/60 px-3 pt-5"
+            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-3"
             role="dialog"
             aria-modal="true"
             aria-label="Trivia del día"

@@ -25,7 +25,7 @@ import { VerifyEmailNudge } from "@/components/VerifyEmailNudge";
 import { TriviaModal } from "@/components/TriviaModal";
 import { getTriviaState } from "@/lib/trivia";
 import { canParticipate } from "@/lib/emailVerification";
-import { isPendingWelcome } from "@/lib/welcome";
+import { isPendingWelcome, isTriviaEligible } from "@/lib/welcome";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StreakInfo } from "@/components/StreakInfo";
 import { BadgeUnlockOverlay } from "@/components/BadgeUnlockOverlay";
@@ -147,9 +147,9 @@ export default async function PronosticosPage({
     // Racha de fechas (misma que las insignias de fuego).
     currentRoundStreak(user._id),
 
-    // Trivia del día — solo si puede participar (ver VerifyEmailNudge más abajo) y ya vio
-    // la bienvenida (si no, ni se pide: quedaría out of context).
-    verified && !pendingWelcome ? getTriviaState(user._id) : Promise.resolve(null),
+    // Trivia del día — solo si puede participar (ver VerifyEmailNudge más abajo) y ya pasó
+    // el día que completó la bienvenida (si no, ni se pide: quedaría out of context).
+    verified && isTriviaEligible(user) ? getTriviaState(user._id) : Promise.resolve(null),
   ]);
 
   const { group, ranked, members: memberUsers } = leagueData;
@@ -165,7 +165,6 @@ export default async function PronosticosPage({
   const autoOpenTrivia = Boolean(
     triviaState && !triviaState.answered && !previewStreak && unseenBadges.length === 0 && !pendingStreak
   );
-
   // "En juego": tenés racha pero todavía no cargaste los 3 pronósticos mínimos de la fecha
   // en curso que hacen falta para que cuente (STREAK_MIN_PREDICTIONS en lib/badges/award).
   const currentRoundMatches = matches.filter((m) => m.round === group.roundKey);
