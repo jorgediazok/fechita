@@ -29,7 +29,6 @@ import { StreakCelebration } from "@/components/StreakCelebration";
 import { evaluateBadgesForUser, getUnseenBadges } from "@/lib/badges";
 import { currentRoundStreak } from "@/lib/badges/award";
 import { getPendingStreak } from "@/lib/profile";
-import { CompetitionTabs } from "./CompetitionTabs";
 import { isMockMode as runningInMockMode, isReplayMode } from "@/lib/fixtures/source";
 import {
   getOrCreateActiveMembership,
@@ -383,8 +382,6 @@ export default async function PronosticosPage({
         </div>
       )}
 
-      {/* competencias */}
-      <CompetitionTabs>
       {/* feed */}
       <div className="flex flex-col gap-3.5 px-4.5 pb-6">
         {visibleRounds.map(([round, roundMatches]) => {
@@ -540,7 +537,6 @@ export default async function PronosticosPage({
           </p>
         )}
       </div>
-      </CompetitionTabs>
     </PhoneFrame>
   );
 }
