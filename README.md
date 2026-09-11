@@ -5,10 +5,17 @@ portfolio con potencial de uso real: identidad local + diseño cuidado + el eje 
 competencia social (ligas con ascenso/descenso, grupos de amigos), no solo en acertar resultados.
 
 **Estado:** el loop central anda de punta a punta y las capas sociales (ligas por fecha, grupos
-privados, bots) están sobre un modelo real y auth real. Los partidos salen de **The Odds API**
-(free tier, temporada argentina en curso). Falta: trivia diaria y el hardening de auth
-pre-lanzamiento. El logo (banderín de córner como la "i" de _Fechita_) está pendiente de
-ejecutar en vector — hoy la marca es el wordmark en Manrope 800.
+privados, bots, insignias, racha, notificaciones) están sobre un modelo real y auth real. Los
+partidos salen de **The Odds API** (free tier, temporada argentina en curso). El registro tiene
+un primer nivel de hardening (rate limit + honeypot + verificación de email armada pero
+**desactivada** hasta tener un dominio propio verificado en Resend — ver "Seguridad del
+registro" más abajo); el consentimiento de Google OAuth ya está **publicado** (no requirió
+revisión de Google, los scopes son básicos), así que cualquiera puede entrar por Google, no
+solo test users. Falta: trivia diaria y, si hace falta más que rate limit + honeypot antes de
+difundir la app más ampliamente, Cloudflare Turnstile. El logo ya tiene una primera versión
+de símbolo —un banderín de córner sobre un cuadrado con degradé (`BrandMark.tsx`)— usado en
+favicon/PWA/login/landing; meter ese banderín como la "i" dentro de la palabra "fechita" sigue
+pendiente de trabajo tipográfico fino.
 
 El diseño completo del producto —por qué existe, contra quién compite, todas las mecánicas y las
 decisiones de scope— está en **[`docs/product-design.md`](docs/product-design.md)**. Notas de
@@ -25,8 +32,9 @@ arquitectura para trabajar en el repo, en **[`CLAUDE.md`](CLAUDE.md)**.
 | Base de datos | MongoDB + Mongoose (cluster real en Atlas) |
 | Auth | NextAuth v5 / Auth.js — Google OAuth + email/password, sesión JWT, sin adapter de DB |
 | Datos de partidos | Fuente intercambiable detrás de `FixtureProvider` (ver abajo), sync a la DB propia |
+| Email | [Resend](https://resend.com) (free tier) vía `fetch` directo a su API REST, sin SDK — verificación de email |
 | PWA | manifest + metadata mobile desde el arranque |
-| Deploy | Vercel (cron de resultados vía GitHub Actions / cron-job.org) |
+| Deploy | Vercel, región `gru1` (São Paulo, misma región que el cluster de Atlas) — cron de resultados vía GitHub Actions / cron-job.org |
 
 > **Ojo:** Next.js 16 tiene breaking changes respecto de versiones anteriores (entre otras,
 > `middleware.ts` → `proxy.ts`). Ver `web/AGENTS.md`.
@@ -48,8 +56,11 @@ fechita/
     │   │   ├── pronosticos/       # pantalla principal: tu posición + cargar la fecha
     │   │   ├── liga/              # tu liga de la fecha (grupo, categoría, ascenso/descenso)
     │   │   ├── grupos/            # grupos privados de amigos
-    │   │   ├── perfil/            # perfil, cambiar club, borrar cuenta
-    │   │   ├── login/ signup/ onboarding/
+    │   │   ├── perfil/            # perfil + cambiar club (equipo/), mi carrera (carrera/),
+    │   │   │                      # insignias (insignias/), borrar cuenta (eliminar/)
+    │   │   ├── reglas/            # "cómo se juega", pública
+    │   │   ├── legal/             # términos/privacidad (versión inicial, honesta), pública
+    │   │   ├── login/ signup/ onboarding/ verificar-email/
     │   │   └── api/
     │   │       ├── auth/[...nextauth]/
     │   │       └── cron/sync/     # endpoint de sincronización (decide si pega a la API)
@@ -58,9 +69,14 @@ fechita/
     │   │   ├── sync.ts            # trae fixtures → upsert Match/Team → califica predicciones
     │   │   ├── leagues.ts         # ligas por fecha: grupos, ascenso/descenso, ganador de la fecha
     │   │   ├── groups.ts          # grupos privados
-    │   │   ├── bots/              # 20 usuarios bot que pronostican solos
+    │   │   ├── bots/              # 50 usuarios bot que pronostican solos
+    │   │   ├── badges/            # catálogo de insignias + cálculo de racha (currentRoundStreak)
+    │   │   ├── profile.ts         # stats de carrera + historial de fechas para /perfil
     │   │   ├── push/              # web push: claves VAPID, envío, dedupe, mensajes
     │   │   ├── notifications.ts   # feed in-app (la campanita) sobre NotificationLog
+    │   │   ├── email/             # envío de mail (Resend) para la verificación
+    │   │   ├── emailVerification.ts # tokens + gate canParticipate() (ver "Seguridad del registro")
+    │   │   ├── rateLimit.ts       # rate limit por IP sobre Mongo, para signup/login
     │   │   ├── points.ts          # cálculo 5 / 3 / 0
     │   │   ├── tiers.ts           # categorías D → C → B → NACIONAL → PRIMERA
     │   │   ├── competitions.ts    # qué competencias se sincronizan
@@ -107,6 +123,9 @@ npm run dev                   # http://localhost:3000
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Par de claves web push (`npx web-push generate-vapid-keys`) | no (sin ellas las notificaciones quedan desactivadas) |
 | `VAPID_SUBJECT` | `mailto:` o URL de contacto para el push | con las VAPID keys |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Igual que `VAPID_PUBLIC_KEY` (la usa el cliente para suscribirse) | con las VAPID keys |
+| `RESEND_API_KEY` | Key de [resend.com](https://resend.com) (free tier, sin tarjeta) para el mail de verificación. Sin ella `sendEmail()` es no-op | no (sin ella nadie recibe el mail, la app funciona igual) |
+| `EMAIL_FROM` | Remitente del mail de verificación (default el dominio de pruebas de Resend, que solo entrega al dueño de la cuenta) | no |
+| `REQUIRE_EMAIL_VERIFICATION` | `"true"` para **exigir** el mail confirmado antes de pronosticar o crear/unirse a un grupo | no (default `false` — ver "Seguridad del registro") |
 | `NEXT_PUBLIC_SITE_URL` | URL pública (metadata OG, QR de la landing). En dev, la IP de LAN para probar el QR desde el celu | no (fallback a localhost) |
 
 ---
@@ -244,9 +263,63 @@ Disparadores (v1, todos reactivos):
 | T3 | Insignia nueva | `evaluateBadgesForUser` (`lib/badges/award.ts`) |
 | T4 | Cerró tu grupo de la fecha → ascenso / descenso / ganador | `closeGroup` (`lib/leagues.ts`) |
 | T1 | Notificación de prueba (botón en el toggle) | `perfil/push-actions.ts#sendTestNotification` |
+| T5 | Te faltan pronósticos y la carga cierra en ~2h | `lib/push/notify.ts#notifyRoundClosingSoon`, llamado en cada tick de `/api/cron/sync` |
 
-Pendiente (T5, cuando el cron esté vivo): "faltan tus pronósticos, cierra en ~2h" — la
-costura ya está (`NotificationLog` + dedupe), falta el pase desde `/api/cron/sync`.
+T5 es puro cálculo de tiempo contra `Match.kickoffAt` (no depende de pegarle a la fuente de
+partidos): mira el partido más próximo sin arrancar de la fecha actual, y si a su
+`predictionLockAt()` (`lib/time.ts`) le quedan entre 0 y 2 horas, avisa a los usuarios reales
+inscriptos en esa fecha que todavía no le cargaron un pronóstico a ese partido. Ventana ancha a
+propósito (el cron no pega justo en el minuto exacto) — el dedupe por `dedupeKey = roundKey`
+evita mandarlo más de una vez por usuario aunque varias corridas caigan adentro de la ventana.
+
+### Insignias, racha y perfil (`lib/badges/`, `lib/profile.ts`)
+
+- **Insignias**: 18 insignias en código (`lib/badges/catalog.ts`, sin colección de catálogo en
+  DB — el mismo criterio que `tiers.ts`), en 6 familias: aciertos acumulados, rachas, resultados
+  exactos, ascensos de categoría, hitos (ganador de la fecha, superclásico, sorpresa) y una meta
+  ("Las tenés todas") por completar las otras 17. Cada usuario ganado se guarda en `UserBadge`.
+  Se evalúan (`evaluateBadgesForUser`, `lib/badges/award.ts`) al sincronizar, al cerrar una fecha y
+  al abrir `/pronosticos`; los bots quedan afuera. La grilla vive en `/perfil/insignias`
+  (`BadgeShowcase`, con el criterio de cada una); ganar una dispara un festejo
+  (`BadgeUnlockOverlay`, confeti + resorte) en `/pronosticos`.
+- **Racha** (`currentRoundStreak` en `award.ts`): fechas cerradas consecutivas en las que el
+  usuario acertó al menos el 50% de sus pronósticos (piso de 3 cargados esa fecha). Se muestra
+  como una llama en el hero de `/pronosticos` (`StreakInfo`) y festeja cuando crece
+  (`StreakCelebration`), con `LeagueMembership.streakAfter`/`streakSeen` para no repetir el festejo.
+- **Perfil enriquecido** (`/perfil` + `/perfil/carrera`): tarjeta de categoría actual y techo
+  histórico (`User.bestTier`), chip de racha, y `/perfil/carrera` con 6 stats de por vida
+  (puntos, aciertos, % de acierto, exactos, fechas jugadas/ganadas) más el historial fecha por
+  fecha — todo calculado en `lib/profile.ts`. `/reglas` (pública) explica las mecánicas del juego;
+  `/legal` tiene una primera versión de términos/privacidad (honesta sobre el estado actual,
+  sin pretender ser un texto con revisión legal todavía).
+
+### Seguridad del registro (`lib/rateLimit.ts`, `lib/emailVerification.ts`)
+
+Primer nivel de hardening sobre `/signup` y `/login`, sin servicios de terceros:
+
+- **Rate limit por IP** sobre Mongo (`RateLimitHit`, TTL 1h, sin Redis): 5 altas / 10 min en
+  signup, 10 intentos / 10 min en login — protege contra registro masivo automatizado y fuerza
+  bruta / credential stuffing sin bloquear a un grupo de amigos en la misma red.
+- **Honeypot** en `/signup`: un campo oculto (`website`) que ningún humano completa; si llega
+  lleno, la acción responde como si el alta hubiese salido bien sin crear nada.
+- **Verificación de email**: `User.emailVerified` + `EmailVerificationToken` (TTL 24h) +
+  `/verificar-email?token=` + banners en `/pronosticos` y `/grupos`. "Existe la cuenta" ≠
+  "participa" — un usuario sin confirmar puede loguearse y mirar la app, pero no cargar
+  pronósticos ni crear/unirse a un grupo (`canParticipate()`). Los usuarios de Google ya llegan
+  verificados. **Está desactivada por default** (`REQUIRE_EMAIL_VERIFICATION=false`): el
+  remitente de prueba de Resend solo entrega al dueño de la cuenta hasta verificar un dominio
+  propio, así que exigirla hoy dejaría trabado a cualquier amigo que se registre.
+
+Ninguna de las dos protege contra un atacante dirigido al repo público (los umbrales y el nombre
+del honeypot se ven en el código) — el siguiente escalón, si hace falta, es Cloudflare Turnstile.
+
+El consentimiento de Google OAuth ya está **publicado y verificado en la práctica** (2026-09-11):
+entra cualquier cuenta de Google sin ningún cartel de "app no verificada" —solo la pantalla
+normal de consentimiento ("vas a compartir tu nombre/mail con Fechita") que ve cualquier app,
+verificada o no. Confirmado logueándose con una cuenta real que no era test user. Google no
+exige el proceso de verificación completa para apps que solo piden los scopes básicos de login
+(`openid`/`email`/`profile`, exactamente los que usa Fechita) —por eso no hizo falta nada más
+que publicar.
 
 ### Auth (`src/auth.ts`)
 
@@ -277,8 +350,11 @@ usan `PhoneFrame` (columna angosta) a propósito — es un producto mobile. Acce
 | `RoundLeagueGroup` | grupo de liga de una fecha (`roundKey`, `tier`, `closesAt`, `status`) |
 | `LeagueMembership` | usuario en un grupo (`points` snapshot, `result`, `wonRound`) |
 | `Group` / `GroupMembership` | grupos privados de amigos |
+| `UserBadge` | insignia ganada por un usuario (`badgeId`, fecha) — el catálogo vive en código, no en DB |
 | `PushSubscription` | una suscripción web push por dispositivo (`endpoint` único) |
 | `NotificationLog` | anti-duplicados de notificaciones + feed in-app (`title`/`body`/`url`/`readAt`; `userId+kind+dedupeKey` único, TTL 60d) |
+| `EmailVerificationToken` | token de confirmación de email (TTL 24h) |
+| `RateLimitHit` | un hit por intento de signup/login, para el rate limit por IP (TTL 1h) |
 | `DevState` | doc único: `lastSyncAt`, `replayStartedAt` |
 
 Los `externalId` de partidos y equipos son ids reales de API-Football, así que cambiar de fuente de
@@ -294,9 +370,9 @@ datos no requiere re-mapear.
 | `npm run build` / `npm start` | Build de producción / correrlo |
 | `npm run lint` | ESLint |
 | `npm test` / `npm run test:watch` | Vitest — unit tests de la lógica pura del juego |
-| `npm run seed` | Limpia datos de prueba viejos y crea 6 usuarios por categoría (contraseña `seed1234`) con pronósticos de spread + siembra los 20 bots |
+| `npm run seed` | Limpia datos de prueba viejos y crea 6 usuarios por categoría (contraseña `seed1234`) con pronósticos de spread + siembra los 50 bots |
 | `npm run seed:clean` | Solo limpia |
-| `npm run seed:bots` | Crea/actualiza los 20 bots y les carga los pronósticos de la ventana actual (idempotente) |
+| `npm run seed:bots` | Crea/actualiza los 50 bots y les carga los pronósticos de la ventana actual (idempotente) |
 
 ---
 
@@ -314,6 +390,10 @@ datos no requiere re-mapear.
 | `lib/leagueZones.test.ts` | El tamaño de la zona de ascenso/descenso (`zoneSize`, ~25% clampeado) |
 | `lib/bots/strategy.test.ts` | Determinismo del RNG por `(bot, partido)`, efecto del `skill`, probabilidades bien formadas |
 | `lib/push/messages.test.ts` | El copy de cada notificación según el evento |
+| `lib/fixtures/theoddsapiProvider.test.ts` | `assignRounds`: numerar fechas agrupando por huecos > 2.5 días desde el ancla real de la primera fecha |
+| `lib/emailVerification.test.ts` | `canParticipate`: la política (`REQUIRE_EMAIL_VERIFICATION`) manda sobre el estado real del usuario; default apagado |
+| `lib/profile.test.ts` | `bestTierOf`: el techo histórico no baja al descender, y no se rompe sin `bestTier` persistido |
+| `lib/badges/catalog.test.ts` | El catálogo de 18 insignias: ids únicos, cada una con rareza/grupo válidos, `BADGE_GROUPS` las reparte todas sin repetir, `coleccionista` es la única de la meta |
 
 Para testear la matemática de zonas aislada se separó a `lib/leagueZones.ts` (mismo criterio
 que `lib/tiers.ts`: lo puro va aparte de lo que toca modelos/DB).
@@ -334,18 +414,32 @@ Pendiente: E2E del loop central (Playwright), y más integración de `evaluateBa
 
 ## Deploy (Vercel)
 
-1. Importar `web/` como proyecto Vercel.
+1. Importar `web/` como proyecto Vercel (root dir `web/`, Framework Preset **Next.js** — si sale
+   404 en todo, el preset quedó en "Other").
 2. Env vars en el dashboard: `MONGODB_URI` (Atlas), `FIXTURE_SOURCE=theoddsapi`, `THE_ODDS_API_KEY`,
    `CRON_SECRET`, `AUTH_SECRET`, `NEXT_PUBLIC_SITE_URL`, `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` si se
-   usa Google, y `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+   usa Google, `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY`
    para las notificaciones push (generá el par una vez con `npx web-push generate-vapid-keys` y no lo
-   cambies después — rotarlo invalida todas las suscripciones existentes).
-3. **Cron de resultados**: Vercel Hobby limita los crons a 1×/día. Para el poleo fino (cada ~10 min),
+   cambies después — rotarlo invalida todas las suscripciones existentes), y `RESEND_API_KEY` /
+   `EMAIL_FROM` si querés que salga el mail de verificación (queda armado pero apagado sin
+   `REQUIRE_EMAIL_VERIFICATION=true`, y esa var no conviene prenderla sin un dominio propio
+   verificado en Resend — ver "Seguridad del registro").
+3. **`vercel.json` fija la región en `gru1` (São Paulo)** — a propósito, para estar cerca del
+   cluster de Atlas (si el cluster está en otra región de AWS, ajustar esto o el RTT se nota).
+4. **Cron de resultados**: Vercel Hobby limita los crons a 1×/día. Para el poleo fino (cada ~10 min),
    configurar un disparador externo que pegue a `https://<dominio>/api/cron/sync` con el header
    `Authorization: Bearer <CRON_SECRET>`:
    - `.github/workflows/sync.yml` (ya está — necesita los secrets `SYNC_URL` y `CRON_SECRET` en el repo), o
    - [cron-job.org](https://cron-job.org) — más confiable, sin límite de minutos.
-4. En Google Cloud Console, agregar `https://<dominio>/api/auth/callback/google` como redirect URI.
+5. En Google Cloud Console, agregar `https://<dominio>/api/auth/callback/google` como redirect
+   URI. El consentimiento OAuth (**OAuth consent screen**) ya está publicado (`Publish App`,
+   2026-09-11) con el link de política de privacidad en `https://<dominio>/legal#privacidad`
+   y el de condiciones de servicio en `https://<dominio>/legal#terminos` (mismo documento,
+   cada uno apunta a su mitad — ver `/legal` en el código); "Authorized domains" quedó vacío
+   a propósito (`vercel.app` es un dominio compartido, Google no deja agregarlo). Confirmado
+   con una cuenta real (no test user): entra sin ningún cartel de "app no verificada" —Google
+   exime de la verificación completa a las apps que solo piden los scopes básicos de login
+   (`openid`/`email`/`profile`), que es todo lo que pide Fechita.
 
 ---
 

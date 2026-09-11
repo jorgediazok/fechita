@@ -32,6 +32,15 @@ export function resultReadyMessage(roundKey: string, points: number): PushPayloa
   };
 }
 
+export function roundClosingMessage(roundKey: string): PushPayload {
+  return {
+    title: `La ${roundKey} cierra pronto`,
+    body: "Todavía te faltan pronósticos y la carga cierra en ~2 horas. Cargalos antes de perder los puntos.",
+    url: "/pronosticos",
+    tag: "round-closing",
+  };
+}
+
 export function badgeMessage(badgeId: string): PushPayload {
   const badge = getBadge(badgeId);
   return {

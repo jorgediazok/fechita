@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { syncAllCompetitions } from "@/lib/sync";
 import { runBots } from "@/lib/bots";
+import { notifyRoundClosingSoon } from "@/lib/push/notify";
 import { connectToDatabase } from "@/lib/db";
 import MatchModel from "@/models/Match";
 import DevStateModel from "@/models/DevState";
@@ -67,6 +68,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
   }
+
+  // T5: puro cálculo de tiempo contra partidos que ya tenemos en la DB, no depende de pegarle
+  // a la fuente de partidos — corre en cada tick del cron, incluso cuando abajo se decide
+  // saltear el sync (mar-jue sin fútbol nunca es cuando cierra una carga).
+  await notifyRoundClosingSoon();
 
   // mock/replay no cuestan nada y no dependen de una ventana real de partidos.
   const local = ["mock", "replay"].includes(getFixtureSource());

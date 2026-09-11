@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resultReadyMessage, badgeMessage, roundCloseMessage } from "./messages";
+import { resultReadyMessage, badgeMessage, roundCloseMessage, roundClosingMessage } from "./messages";
 
 describe("resultReadyMessage", () => {
   it("con puntos, los nombra en singular/plural", () => {
@@ -27,6 +27,14 @@ describe("badgeMessage", () => {
     const m = badgeMessage("no-existe");
     expect(m.title).toBe("Nueva insignia");
     expect(m.body.length).toBeGreaterThan(0);
+  });
+});
+
+describe("roundClosingMessage", () => {
+  it("nombra la fecha en el título y manda a /pronosticos, no a /liga", () => {
+    const m = roundClosingMessage("Fecha 9");
+    expect(m.title).toContain("Fecha 9");
+    expect(m.url).toBe("/pronosticos");
   });
 });
 
