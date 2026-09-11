@@ -1,0 +1,40 @@
+# Typecheck + lint + Vitest (unit e integration) en cada PR/push a main. Sin costo: repo
+# público (Actions gratis e ilimitado) y nada acá pega a una API paga — integration corre
+# contra mongodb-memory-server (un Mongo descargado y corrido en el propio runner, no Atlas).
+name: test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # hookTimeout de 120s en vitest.config.mts: la primera corrida de integration baja el
+      # binario de mongod.
+      - name: Vitest (unit + integration)
+        run: npm test
